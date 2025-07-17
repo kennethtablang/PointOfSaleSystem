@@ -1,6 +1,7 @@
 ﻿using PointOfSaleSystem.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace PointOfSaleSystem.Models.Inventory
 {
@@ -20,12 +21,13 @@ namespace PointOfSaleSystem.Models.Inventory
         [ForeignKey("CategoryId")]
         public Category? Category { get; set; }
 
-        [Required]
-        public UnitType BaseUnit { get; set; }
+        public int UnitId { get; set; }
+        public Unit Unit { get; set; }
 
         public string? Description { get; set; }
 
         [Required]
+        [Precision(18, 2)]
         public decimal Price { get; set; }
 
         [Required]

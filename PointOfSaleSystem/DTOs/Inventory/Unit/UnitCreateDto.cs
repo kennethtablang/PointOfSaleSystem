@@ -1,18 +1,15 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PointOfSaleSystem.DTOs.Inventory.Category
+namespace PointOfSaleSystem.DTOs.Inventory.Unit
 {
-    public class CategoryCreateDto
+    public class UnitCreateDto
     {
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
-
-        [MaxLength(255)]
-        public string? Description { get; set; }
     }
 
-    public class CategoryUpdateDto
+    public class UnitUpdateDto
     {
         [Required]
         public int Id { get; set; }
@@ -20,15 +17,11 @@ namespace PointOfSaleSystem.DTOs.Inventory.Category
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
-
-        [MaxLength(255)]
-        public string? Description { get; set; }
     }
 
-    public class CategoryViewDto
+    public class UnitViewDto
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public string? Description { get; set; }
     }
 }

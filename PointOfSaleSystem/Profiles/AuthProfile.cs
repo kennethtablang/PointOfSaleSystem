@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿//AutoMapper
+using AutoMapper;
 using PointOfSaleSystem.DTOs.Auth;
 using PointOfSaleSystem.Models.Auth;
 

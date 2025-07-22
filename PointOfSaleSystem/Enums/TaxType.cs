@@ -1,9 +1,9 @@
 ﻿namespace PointOfSaleSystem.Enums
 {
-    public enum VatType
+    public enum TaxType
     {
+        Vatable,
         VatExempt,
-        ZeroRated,
-        VatInclusive
+        ZeroRated
     }
 }

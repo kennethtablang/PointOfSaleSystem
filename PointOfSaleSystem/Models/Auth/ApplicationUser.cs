@@ -23,5 +23,8 @@ namespace PointOfSaleSystem.Models.Auth
 
         public ICollection<UserSession>? Sessions { get; set; }
         public ICollection<SystemLog>? Logs { get; set; }
+
+        [Required]
+        public DateTime? DateCreated { get; set; } = DateTime.Now;
     }
 }

@@ -28,11 +28,6 @@
     <Folder Include="Middleware\" />
     <Folder Include="BackgroundJobs\" />
     <Folder Include="Migrations\" />
-    <Folder Include="Models\Reports\" />
-    <Folder Include="Models\Printing\" />
-    <Folder Include="Models\Settings\" />
-    <Folder Include="Models\Suppliers\" />
-    <Folder Include="Models\Sales\" />
     <Folder Include="Repositories\" />
     <Folder Include="Settings\" />
   </ItemGroup>

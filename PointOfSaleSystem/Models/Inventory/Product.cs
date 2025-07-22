@@ -16,6 +16,8 @@ namespace PointOfSaleSystem.Models.Inventory
         [MaxLength(100)]
         public string? Barcode { get; set; }
 
+        public bool IsBarcoded { get; set; } = true;
+
         public int CategoryId { get; set; }
 
         [ForeignKey("CategoryId")]
@@ -31,12 +33,17 @@ namespace PointOfSaleSystem.Models.Inventory
         public decimal Price { get; set; }
 
         [Required]
-        public VatType VatType { get; set; }
+        public TaxType TaxType { get; set; }
 
         public bool IsPerishable { get; set; } = false;
 
         public int? ReorderLevel { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        // Store product image directly in DB
+        public byte[]? ImageData { get; set; }
+
+        public ICollection<InventoryTransaction>? InventoryTransactions { get; set; }
     }
 }

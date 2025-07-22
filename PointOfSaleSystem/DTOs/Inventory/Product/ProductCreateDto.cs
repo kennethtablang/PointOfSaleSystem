@@ -22,7 +22,7 @@ namespace PointOfSaleSystem.DTOs.Inventory.Product
         public decimal Price { get; set; }
 
         [Required]
-        public VatType VatType { get; set; }
+        public TaxType VatType { get; set; }
 
         public bool IsPerishable { get; set; } = false;
 
@@ -51,7 +51,7 @@ namespace PointOfSaleSystem.DTOs.Inventory.Product
         public decimal Price { get; set; }
 
         [Required]
-        public VatType VatType { get; set; }
+        public TaxType VatType { get; set; }
 
         public bool IsPerishable { get; set; } = false;
 
@@ -79,7 +79,7 @@ namespace PointOfSaleSystem.DTOs.Inventory.Product
 
         public decimal Price { get; set; }
 
-        public VatType VatType { get; set; }
+        public TaxType VatType { get; set; }
 
         public bool IsPerishable { get; set; }
 

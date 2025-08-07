@@ -20,14 +20,17 @@ namespace PointOfSaleSystem.Services.Inventory
 
         public async Task<IEnumerable<UnitViewDto>> GetAllAsync()
         {
-            var units = await _context.Units.ToListAsync();
+            var units = await _context.Units
+                .Where(u => u.IsActive)
+                .ToListAsync();
             return _mapper.Map<IEnumerable<UnitViewDto>>(units);
         }
 
         public async Task<UnitViewDto?> GetByIdAsync(int id)
         {
             var unit = await _context.Units.FindAsync(id);
-            return unit == null ? null : _mapper.Map<UnitViewDto>(unit);
+            if (unit == null || !unit.IsActive) return null;
+            return _mapper.Map<UnitViewDto>(unit);
         }
 
         public async Task<UnitViewDto> CreateAsync(UnitCreateDto dto)
@@ -48,12 +51,12 @@ namespace PointOfSaleSystem.Services.Inventory
             return true;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeactivateAsync(int id)
         {
             var unit = await _context.Units.FindAsync(id);
             if (unit == null) return false;
 
-            _context.Units.Remove(unit);
+            unit.IsActive = false;
             await _context.SaveChangesAsync();
             return true;
         }

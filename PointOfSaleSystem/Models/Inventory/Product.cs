@@ -41,9 +41,8 @@ namespace PointOfSaleSystem.Models.Inventory
 
         public bool IsActive { get; set; } = true;
 
-        // Store product image directly in DB
         public byte[]? ImageData { get; set; }
 
-        public ICollection<InventoryTransaction>? InventoryTransactions { get; set; }
+        public ICollection<InventoryTransaction>? InventoryTransactions { get; set; } = new List<InventoryTransaction>();
     }
 }

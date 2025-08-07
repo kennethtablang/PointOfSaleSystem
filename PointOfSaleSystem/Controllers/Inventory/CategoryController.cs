@@ -51,10 +51,10 @@ namespace PointOfSaleSystem.Controllers.Inventory
             return success ? NoContent() : StatusCode(500);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
+        [HttpPatch("{id}")]
+        public async Task<ActionResult> Deactivate(int id)
         {
-            var success = await _categoryService.DeleteAsync(id);
+            var success = await _categoryService.DeactivateAsync(id);
             return success ? NoContent() : NotFound();
         }
     }

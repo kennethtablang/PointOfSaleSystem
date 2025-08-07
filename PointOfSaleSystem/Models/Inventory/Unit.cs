@@ -15,6 +15,8 @@ namespace PointOfSaleSystem.Models.Inventory
 
         public bool AllowsDecimal { get; set; } = false;  // Enables or disables decimal quantities
 
+        public bool IsActive { get; set; } = true;
+
         // Navigation
         public ICollection<Product> Products { get; set; } = new List<Product>();
 

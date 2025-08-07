@@ -8,6 +8,6 @@ namespace PointOfSaleSystem.Interfaces.Inventory
         Task<UnitViewDto?> GetByIdAsync(int id);
         Task<UnitViewDto> CreateAsync(UnitCreateDto dto);
         Task<bool> UpdateAsync(UnitUpdateDto dto);
-        Task<bool> DeleteAsync(int id);
+        Task<bool> DeactivateAsync(int id);
     }
 }

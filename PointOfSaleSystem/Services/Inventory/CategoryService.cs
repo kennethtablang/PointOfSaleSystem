@@ -32,11 +32,11 @@ namespace PointOfSaleSystem.Services.Inventory
 
         public async Task<CategoryViewDto> CreateAsync(CategoryCreateDto dto)
         {
-            var category = _mapper.Map<Category>(dto); // ✅ Map from CreateDto → Entity
+            var category = _mapper.Map<Category>(dto);
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<CategoryViewDto>(category); // ✅ Return ViewDto
+            return _mapper.Map<CategoryViewDto>(category);
         }
 
         public async Task<bool> UpdateAsync(CategoryUpdateDto dto)
@@ -44,18 +44,18 @@ namespace PointOfSaleSystem.Services.Inventory
             var category = await _context.Categories.FindAsync(dto.Id);
             if (category == null) return false;
 
-            _mapper.Map(dto, category); // ✅ Map UpdateDto → existing entity
+            _mapper.Map(dto, category);
             _context.Categories.Update(category);
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeactivateAsync(int id)
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null) return false;
 
-            _context.Categories.Remove(category);
+            category.IsActive = false;
             await _context.SaveChangesAsync();
             return true;
         }

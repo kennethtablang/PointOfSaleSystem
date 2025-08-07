@@ -9,12 +9,12 @@ namespace PointOfSaleSystem.Controllers.Inventory
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin")]
-    public class UnitController : ControllerBase
+    public class UnitsController : ControllerBase
     {
         private readonly IUnitService _unitService;
         private readonly IMapper _mapper;
 
-        public UnitController(IUnitService unitService, IMapper mapper)
+        public UnitsController(IUnitService unitService, IMapper mapper)
         {
             _unitService = unitService;
             _mapper = mapper;
@@ -46,17 +46,18 @@ namespace PointOfSaleSystem.Controllers.Inventory
         public async Task<ActionResult> Update(int id, UnitUpdateDto dto)
         {
             if (id != dto.Id) return BadRequest();
+            var exists = await _unitService.GetByIdAsync(id);
+            if (exists == null) return NotFound();
+
             var updated = await _unitService.UpdateAsync(dto);
-            if (!updated) return NotFound();
-            return NoContent();
+            return updated ? NoContent() : StatusCode(500);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
+        [HttpPatch("{id}/deactivate")]
+        public async Task<ActionResult> Deactivate(int id)
         {
-            var deleted = await _unitService.DeleteAsync(id);
-            if (!deleted) return NotFound();
-            return NoContent();
+            var success = await _unitService.DeactivateAsync(id);
+            return success ? NoContent() : NotFound();
         }
     }
 }

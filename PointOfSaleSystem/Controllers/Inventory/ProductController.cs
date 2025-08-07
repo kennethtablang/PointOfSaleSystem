@@ -7,7 +7,7 @@ namespace PointOfSaleSystem.Controllers.Inventory
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,Cashier,Warehouse")]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
@@ -21,7 +21,7 @@ namespace PointOfSaleSystem.Controllers.Inventory
         public async Task<ActionResult<IEnumerable<ProductViewDto>>> GetAll()
         {
             var products = await _productService.GetAllAsync();
-            return Ok(products); // Already DTO-mapped by the service
+            return Ok(products);
         }
 
         [HttpGet("{id}")]
@@ -35,6 +35,8 @@ namespace PointOfSaleSystem.Controllers.Inventory
         [HttpPost]
         public async Task<ActionResult> Create(ProductCreateDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
             var created = await _productService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
@@ -51,10 +53,10 @@ namespace PointOfSaleSystem.Controllers.Inventory
             return success ? NoContent() : StatusCode(500);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
+        [HttpPatch("{id}/deactivate")]
+        public async Task<IActionResult> Deactivate(int id)
         {
-            var success = await _productService.DeleteAsync(id);
+            var success = await _productService.DeactivateAsync(id);
             return success ? NoContent() : NotFound();
         }
     }

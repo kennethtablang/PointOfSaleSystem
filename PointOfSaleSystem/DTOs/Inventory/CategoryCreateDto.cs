@@ -23,6 +23,8 @@ namespace PointOfSaleSystem.DTOs.Inventory
 
         [MaxLength(255)]
         public string? Description { get; set; }
+
+        public bool IsActive { get; set; }
     }
 
     public class CategoryViewDto
@@ -30,5 +32,6 @@ namespace PointOfSaleSystem.DTOs.Inventory
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public bool IsActive { get; set; }
     }
 }

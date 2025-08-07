@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PointOfSaleSystem.Models.Auth;
 using PointOfSaleSystem.Models.Inventory;
@@ -8,7 +7,6 @@ using PointOfSaleSystem.Models.Reports;
 using PointOfSaleSystem.Models.Sales;
 using PointOfSaleSystem.Models.Settings;
 using PointOfSaleSystem.Models.Suppliers;
-using System.Reflection.Emit;
 
 namespace PointOfSaleSystem.Data
 {

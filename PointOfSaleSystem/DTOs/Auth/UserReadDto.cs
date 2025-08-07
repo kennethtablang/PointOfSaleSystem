@@ -4,7 +4,7 @@ namespace PointOfSaleSystem.DTOs.Auth
 {
     public class UserReadDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         public string FirstName { get; set; } = string.Empty;
         public string? MiddleName { get; set; }
@@ -17,5 +17,7 @@ namespace PointOfSaleSystem.DTOs.Auth
         public UserRole Role { get; set; }
 
         public bool IsActive { get; set; }
+
+        public DateTime? DateCreated { get; set; }
     }
 }

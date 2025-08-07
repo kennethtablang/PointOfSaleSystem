@@ -6,7 +6,7 @@ namespace PointOfSaleSystem.Models.Auth
     {
         public int Id { get; set; }
 
-        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
         [ForeignKey("User")]
         public string? UserId { get; set; }

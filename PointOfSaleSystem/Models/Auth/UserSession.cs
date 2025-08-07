@@ -9,8 +9,8 @@ namespace PointOfSaleSystem.Models.Auth
         [ForeignKey("User")]
         public string UserId { get; set; }
 
-        public DateTime LoginTime { get; set; }
-        public DateTime? LogoutTime { get; set; }
+        public DateTime LoginTime { get; set; } = DateTime.Now;
+        public DateTime? LogoutTime { get; set; } = DateTime.Now;
 
         public string? TerminalName { get; set; }
         public string? IPAddress { get; set; }

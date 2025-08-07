@@ -3,7 +3,7 @@
     public enum TaxType
     {
         Vatable,
-        VatExempt,
+        Exempt,
         ZeroRated
     }
 }

@@ -9,7 +9,7 @@ namespace PointOfSaleSystem.Models.Auth
         [Required]
         public string UsernameOrEmail { get; set; } = string.Empty;
 
-        public DateTime AttemptedAt { get; set; } = DateTime.Now;
+        public DateTime AttemptedAt { get; set; } = DateTime.UtcNow;
 
         public bool WasSuccessful { get; set; }
 

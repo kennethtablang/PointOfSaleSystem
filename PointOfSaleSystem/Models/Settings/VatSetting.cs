@@ -10,7 +10,7 @@ namespace PointOfSaleSystem.Models.Settings
 
         [Required]
         [MaxLength(50)]
-        public string Name { get; set; } = "VAT";
+        public string Name { get; set; }
 
         [Required]
         [Range(0, 100)]

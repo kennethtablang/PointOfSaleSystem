@@ -6,7 +6,7 @@ namespace PointOfSaleSystem.DTOs.Auth
     public class UserUpdateDto
     {
         [Required]
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         public string? FirstName { get; set; }
         public string? MiddleName { get; set; }

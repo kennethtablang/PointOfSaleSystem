@@ -7,9 +7,11 @@ using Microsoft.OpenApi.Models;
 using PointOfSaleSystem.Data;
 using PointOfSaleSystem.Interfaces.Auth;
 using PointOfSaleSystem.Interfaces.Inventory;
+using PointOfSaleSystem.Interfaces.Settings;
 using PointOfSaleSystem.Models.Auth;
 using PointOfSaleSystem.Services.Auth;
 using PointOfSaleSystem.Services.Inventory;
+using PointOfSaleSystem.Services.Settings;
 using System.Text;
 
 namespace PointOfSaleSystem
@@ -71,11 +73,21 @@ namespace PointOfSaleSystem
 
             // Application Services
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IAuthLogService, AuthLogService>();
+            builder.Services.AddScoped<ISystemLogService, SystemLogService>();
+            builder.Services.AddScoped<IUserSessionService, UserSessionService>();
+
+            //Settings
+            builder.Services.AddScoped<IBusinessProfileService, BusinessProfileService>();
+            builder.Services.AddScoped<IVatSettingService, VatSettingService>();
+            builder.Services.AddScoped<IDiscountSettingService, DiscountSettingService>();
+            builder.Services.AddScoped<ICounterService, CounterService>();
+            builder.Services.AddScoped<IReceiptSettingService, ReceiptSettingService>();
+
             // Inventory Services
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<IUnitService, UnitService>();
-
 
             // Swagger / OpenAPI
             builder.Services.AddEndpointsApiExplorer();
@@ -107,11 +119,12 @@ namespace PointOfSaleSystem
             // CORS
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", policy =>
+                options.AddPolicy("FrontendPolicy", policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins("http://localhost:5173")
                           .AllowAnyMethod()
-                          .AllowAnyHeader();
+                          .AllowAnyHeader()
+                          .AllowCredentials();
                 });
             });
 
@@ -144,7 +157,7 @@ namespace PointOfSaleSystem
             }
 
             app.UseHttpsRedirection();
-            app.UseCors("AllowAll");
+            app.UseCors("FrontendPolicy");
 
             app.UseAuthentication(); // Must come before UseAuthorization
             app.UseAuthorization();

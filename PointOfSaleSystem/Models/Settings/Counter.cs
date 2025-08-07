@@ -10,7 +10,7 @@ namespace PointOfSaleSystem.Models.Settings
 
         [Required]
         [MaxLength(50)]
-        public string Name { get; set; } = string.Empty; // e.g., "Counter 1"
+        public string Name { get; set; } = string.Empty; // Counter 1
 
         [MaxLength(100)]
         public string? Description { get; set; }
@@ -18,11 +18,11 @@ namespace PointOfSaleSystem.Models.Settings
         public bool IsActive { get; set; } = true;
 
         // to assign default printer or hardware
-        public string? TerminalIdentifier { get; set; } // e.g., Machine name or GUID
+        public string? TerminalIdentifier { get; set; }
 
         public ICollection<Sale>? Sales { get; set; }
 
-        public ICollection<UserSession>? UserSessions { get; set; } // optional for tracking who used the counter
+        public ICollection<UserSession>? UserSessions { get; set; }
 
         public ICollection<XReading>? XReadings { get; set; }
         public ICollection<ZReading>? ZReadings { get; set; }

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PointOfSaleSystem.DTOs.Inventory.Category
+namespace PointOfSaleSystem.DTOs.Inventory
 {
     public class CategoryCreateDto
     {

@@ -1,7 +1,7 @@
-﻿using PointOfSaleSystem.Models.Inventory;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using PointOfSaleSystem.Models.Inventory;
 
 namespace PointOfSaleSystem.Models.Reports
 {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PointOfSaleSystem.DTOs.Inventory.Category;
+using PointOfSaleSystem.DTOs.Inventory;
 using PointOfSaleSystem.Interfaces.Inventory;
 
 namespace PointOfSaleSystem.Controllers.Inventory

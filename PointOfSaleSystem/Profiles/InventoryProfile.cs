@@ -1,14 +1,12 @@
 ﻿using AutoMapper;
-using PointOfSaleSystem.DTOs.Inventory.Category;
-using PointOfSaleSystem.DTOs.Inventory.Product;
-using PointOfSaleSystem.DTOs.Inventory.Unit;
+using PointOfSaleSystem.DTOs.Inventory;
 using PointOfSaleSystem.Models.Inventory;
 
 namespace PointOfSaleSystem.Profiles
 {
-    public class MappingProfile : Profile
+    public class InventoryProfile : Profile
     {
-        public MappingProfile()
+        public InventoryProfile()
         {
             // Category mappings
             CreateMap<Category, CategoryViewDto>();

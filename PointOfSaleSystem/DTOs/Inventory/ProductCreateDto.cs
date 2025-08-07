@@ -1,7 +1,7 @@
 ﻿using PointOfSaleSystem.Enums;
 using System.ComponentModel.DataAnnotations;
 
-namespace PointOfSaleSystem.DTOs.Inventory.Product
+namespace PointOfSaleSystem.DTOs.Inventory
 {
     public class ProductCreateDto
     {

@@ -1,4 +1,4 @@
-﻿using PointOfSaleSystem.DTOs.Inventory.Product;
+﻿using PointOfSaleSystem.DTOs.Inventory;
 
 namespace PointOfSaleSystem.Interfaces.Inventory
 {

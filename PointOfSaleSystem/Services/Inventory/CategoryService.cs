@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using PointOfSaleSystem.Data;
-using PointOfSaleSystem.DTOs.Inventory.Category;
+using PointOfSaleSystem.DTOs.Inventory;
 using PointOfSaleSystem.Interfaces.Inventory;
 using PointOfSaleSystem.Models.Inventory;
 

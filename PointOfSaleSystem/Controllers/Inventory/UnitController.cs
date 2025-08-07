@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PointOfSaleSystem.DTOs.Inventory.Unit;
+using PointOfSaleSystem.DTOs.Inventory;
 using PointOfSaleSystem.Interfaces.Inventory;
 
-namespace PointOfSaleSystem.Controllers
+namespace PointOfSaleSystem.Controllers.Inventory
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -8,10 +8,12 @@ using PointOfSaleSystem.Data;
 using PointOfSaleSystem.Interfaces.Auth;
 using PointOfSaleSystem.Interfaces.Inventory;
 using PointOfSaleSystem.Interfaces.Settings;
+using PointOfSaleSystem.Interfaces.Supplier;
 using PointOfSaleSystem.Models.Auth;
 using PointOfSaleSystem.Services.Auth;
 using PointOfSaleSystem.Services.Inventory;
 using PointOfSaleSystem.Services.Settings;
+using PointOfSaleSystem.Services.Supplier;
 using System.Text;
 
 namespace PointOfSaleSystem
@@ -88,6 +90,10 @@ namespace PointOfSaleSystem
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<IUnitService, UnitService>();
+            builder.Services.AddScoped<IProductUnitConversionService, ProductUnitConversionService>();
+
+            //Supplier Services
+            builder.Services.AddScoped<ISupplierService, SupplierService>();
 
             // Swagger / OpenAPI
             builder.Services.AddEndpointsApiExplorer();

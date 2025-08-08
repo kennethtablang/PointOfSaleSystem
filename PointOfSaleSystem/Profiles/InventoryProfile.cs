@@ -36,6 +36,26 @@ namespace PointOfSaleSystem.Profiles
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true));
             CreateMap<UnitUpdateDto, Unit>();
 
+
+            // ProductUnitConversion mappings
+            CreateMap<ProductUnitConversion, ProductUnitConversionReadDto>()
+                .ForMember(dest => dest.FromUnitName,
+                           opt => opt.MapFrom(src => src.FromUnit != null ? src.FromUnit.Name : null))
+                .ForMember(dest => dest.ToUnitName,
+                           opt => opt.MapFrom(src => src.ToUnit != null ? src.ToUnit.Name : null))
+                .ForMember(dest => dest.ProductName,
+                           opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : null));
+
+            CreateMap<ProductUnitConversionCreateDto, ProductUnitConversion>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Product, opt => opt.Ignore())
+                .ForMember(dest => dest.FromUnit, opt => opt.Ignore())
+                .ForMember(dest => dest.ToUnit, opt => opt.Ignore());
+
+            CreateMap<ProductUnitConversionUpdateDto, ProductUnitConversion>()
+                .ForMember(dest => dest.Product, opt => opt.Ignore())
+                .ForMember(dest => dest.FromUnit, opt => opt.Ignore())
+                .ForMember(dest => dest.ToUnit, opt => opt.Ignore());
         }
     }
 }

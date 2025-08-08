@@ -71,13 +71,11 @@ namespace PointOfSaleSystem.Data
         public DbSet<ReceivedStock> ReceivedStocks { get; set; }
         public DbSet<Supplier> Suppliers { get; set; }
 
-        // TODO: Add your future models like Products, Categories, Sales, etc.
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            // Optional: Fluent API or custom table names
 
             builder.Entity<ApplicationUser>(entity =>
             {
@@ -85,33 +83,29 @@ namespace PointOfSaleSystem.Data
                 entity.Property(u => u.LastName).IsRequired().HasMaxLength(100);
             });
 
-            //User Session relationships
             builder.Entity<UserSession>()
                 .HasOne(s => s.User)
                 .WithMany(u => u.Sessions)
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //System Log relationships
             builder.Entity<SystemLog>()
                 .HasOne(log => log.User)
                 .WithMany(user => user.Logs)
                 .HasForeignKey(log => log.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            //Product relationships
             builder.Entity<Product>()
                 .HasOne(p => p.Category)
                 .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CategoryId)
-                .OnDelete(DeleteBehavior.Restrict); // Prevent cascading delete by default
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Product>()
                 .HasIndex(p => p.Barcode)
                 .IsUnique()
                 .HasFilter("[Barcode] IS NOT NULL");
 
-            // PurchaseItem configuration
             builder.Entity<PurchaseItem>()
                 .HasOne(pi => pi.PurchaseOrder)
                 .WithMany(po => po.PurchaseItems)
@@ -124,7 +118,6 @@ namespace PointOfSaleSystem.Data
                 .HasForeignKey(pi => pi.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ReceivedStock configuration
             builder.Entity<ReceivedStock>()
                 .HasOne(rs => rs.PurchaseOrder)
                 .WithMany(po => po.ReceivedStocks)
@@ -165,47 +158,42 @@ namespace PointOfSaleSystem.Data
                 .HasOne(puc => puc.Product)
                 .WithMany()
                 .HasForeignKey(puc => puc.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<ReportExportLog>()
                 .HasOne(r => r.ExportedByUser)
                 .WithMany()
                 .HasForeignKey(r => r.ExportedByUserId);
 
-            // Disable cascade delete on ReceiptLog → Sale
             builder.Entity<ReceiptLog>()
                 .HasOne(r => r.Sale)
-                .WithMany() // assuming you don’t have a Sale.ReceiptLogs collection
+                .WithMany()
                 .HasForeignKey(r => r.SaleId)
-                .OnDelete(DeleteBehavior.Restrict); // or .NoAction() if EF Core 7+
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // You can also be explicit on ApplicationUser → ReceiptLog if needed
             builder.Entity<ReceiptLog>()
                 .HasOne(r => r.PrintedBy)
                 .WithMany()
                 .HasForeignKey(r => r.PrintedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Fix for ReprintLog → Sale
             builder.Entity<ReprintLog>()
                 .HasOne(r => r.Sale)
                 .WithMany()
                 .HasForeignKey(r => r.SaleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Fix for ReprintLog → ReprintedByUser
             builder.Entity<ReprintLog>()
                 .HasOne(r => r.ReprintedByUser)
                 .WithMany()
                 .HasForeignKey(r => r.ReprintedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Fix for ReturnTransaction.OriginalSaleId
             builder.Entity<ReturnTransaction>()
                 .HasOne(r => r.OriginalSale)
                 .WithMany()
                 .HasForeignKey(r => r.OriginalSaleId)
-                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<ReturnTransaction>()
                 .HasOne(r => r.ReturnedBy)
@@ -217,7 +205,7 @@ namespace PointOfSaleSystem.Data
                 .HasOne(si => si.Sale)
                 .WithMany(s => s.SaleItems)
                 .HasForeignKey(si => si.SaleId)
-                .OnDelete(DeleteBehavior.Restrict); // Or DeleteBehavior.NoAction
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<SaleItem>()
                 .HasOne(si => si.Unit)
@@ -235,7 +223,7 @@ namespace PointOfSaleSystem.Data
                 .HasOne(v => v.Sale)
                 .WithMany()
                 .HasForeignKey(v => v.SaleId)
-                .OnDelete(DeleteBehavior.Restrict); // No cascading
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

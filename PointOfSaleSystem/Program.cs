@@ -94,6 +94,7 @@ namespace PointOfSaleSystem
 
             //Supplier Services
             builder.Services.AddScoped<ISupplierService, SupplierService>();
+            builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 
             // Swagger / OpenAPI
             builder.Services.AddEndpointsApiExplorer();

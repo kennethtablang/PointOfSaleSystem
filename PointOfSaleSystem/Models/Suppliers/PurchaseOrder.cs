@@ -14,7 +14,7 @@ namespace PointOfSaleSystem.Models.Suppliers
         public int SupplierId { get; set; }
 
         [Required]
-        [MaxLength(20)]
+        [MaxLength(200)]
         public string PurchaseOrderNumber { get; set; } = string.Empty;
 
         public DateTime OrderDate { get; set; } = DateTime.Now;
@@ -36,7 +36,7 @@ namespace PointOfSaleSystem.Models.Suppliers
         [ForeignKey("SupplierId")]
         public Supplier? Supplier { get; set; }
 
-        public ICollection<PurchaseItem>? PurchaseItems { get; set; } = new List<PurchaseItem>();
+        public ICollection<PurchaseItem> PurchaseItems { get; set; } = new List<PurchaseItem>();
 
         public ICollection<ReceivedStock> ReceivedStocks { get; set; } = new List<ReceivedStock>();
 

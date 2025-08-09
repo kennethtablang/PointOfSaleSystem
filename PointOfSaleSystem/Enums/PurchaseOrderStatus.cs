@@ -4,8 +4,8 @@
     {
         Draft,
         Ordered,
-        ReceivedPartial,
-        Completed,
+        PartiallyReceived,
         Cancelled,
+        Received,
     }
 }

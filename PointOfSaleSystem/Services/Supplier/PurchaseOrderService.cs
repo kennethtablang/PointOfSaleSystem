@@ -39,6 +39,7 @@ namespace PointOfSaleSystem.Services.Supplier
             var po = await _context.PurchaseOrders
                 .Include(p => p.Supplier)
                 .Include(p => p.PurchaseItems).ThenInclude(pi => pi.Product)
+                .Include(p => p.ReceivedStocks).ThenInclude(rs => rs.Product)
                 .Include(p => p.ReceivedStocks).ThenInclude(rs => rs.ReceivedByUser)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);

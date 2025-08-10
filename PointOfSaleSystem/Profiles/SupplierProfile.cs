@@ -29,11 +29,13 @@ namespace PointOfSaleSystem.Profiles
             CreateMap<PurchaseItemUpdateDto, PurchaseItem>();
 
             // ReceivedStock
+            // ReceivedStock
             CreateMap<ReceivedStock, ReceivedStockReadDto>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : string.Empty))
-                .ForMember(dest => dest.ReceivedByUserName, opt => opt.MapFrom(src => src.ReceivedByUser != null ? src.ReceivedByUser.UserName : string.Empty));
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : null))
+                .ForMember(dest => dest.ReceivedByUserName, opt => opt.MapFrom(src => src.ReceivedByUser != null ? src.ReceivedByUser.UserName : null));
 
             CreateMap<ReceivedStockCreateDto, ReceivedStock>();
+
         }
     }
 }

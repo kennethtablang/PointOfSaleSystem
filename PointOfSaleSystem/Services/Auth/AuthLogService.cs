@@ -58,7 +58,7 @@ namespace PointOfSaleSystem.Services.Auth
 
             if (session != null)
             {
-                session.LogoutTime = DateTime.Now;
+                session.LogoutTime = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
         }
@@ -73,7 +73,7 @@ namespace PointOfSaleSystem.Services.Auth
         public async Task LogSystemActionAsync(SystemLogDto dto)
         {
             var log = _mapper.Map<SystemLog>(dto);
-            log.Timestamp = DateTime.Now; // ensure server-side timestamp
+            log.Timestamp = DateTime.UtcNow; // ensure server-side timestamp
             await _context.SystemLogs.AddAsync(log);
             await _context.SaveChangesAsync();
         }
@@ -91,7 +91,7 @@ namespace PointOfSaleSystem.Services.Auth
             }
 
             var session = _mapper.Map<UserSession>(dto);
-            session.LoginTime = DateTime.Now;
+            session.LoginTime = DateTime.UtcNow;
             await _context.UserSessions.AddAsync(session);
             await _context.SaveChangesAsync();
         }

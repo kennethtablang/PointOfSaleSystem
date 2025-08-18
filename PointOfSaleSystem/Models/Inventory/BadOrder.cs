@@ -26,12 +26,20 @@ namespace PointOfSaleSystem.Models.Inventory
         public string? Remarks { get; set; } // Optional note like batch no, expiry date, etc.
 
         [Required]
-        public DateTime BadOrderDate { get; set; } = DateTime.Now;
+        public DateTime BadOrderDate { get; set; } = DateTime.UtcNow;
 
         [Required]
         public string ReportedByUserId { get; set; } = string.Empty;
 
         [ForeignKey("ReportedByUserId")]
         public ApplicationUser? ReportedByUser { get; set; }
+
+        public int? InventoryTransactionId { get; set; }
+
+        [ForeignKey("InventoryTransactionId")]
+        public InventoryTransaction? InventoryTransaction { get; set; }
+
+        // mark if this bad order was created by system/process rather than a user
+        public bool IsSystemGenerated { get; set; } = false;
     }
 }

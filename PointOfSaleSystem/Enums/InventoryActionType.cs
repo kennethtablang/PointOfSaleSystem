@@ -2,11 +2,12 @@
 {
     public enum InventoryActionType
     {
-        StockIn,
-        Sale,
-        Return,
-        VoidedSale,
-        Adjustment,
-        BadOrder
+        StockIn = 0,
+        Sale = 1,
+        Return = 3,
+        VoidedSale = 4,
+        Adjustment = 5,
+        BadOrder = 6,
+        Transfer =7,
     }
 }

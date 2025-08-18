@@ -2,8 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using PointOfSaleSystem.Data;
 using PointOfSaleSystem.DTOs.Suppliers;
+using PointOfSaleSystem.Enums;
 using PointOfSaleSystem.Interfaces.Supplier;
+using PointOfSaleSystem.Models.Inventory;
 using PointOfSaleSystem.Models.Suppliers;
+using System.Security.Cryptography;
 
 namespace PointOfSaleSystem.Services.Supplier
 {
@@ -11,22 +14,61 @@ namespace PointOfSaleSystem.Services.Supplier
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ILogger<PurchaseOrderService> _logger;
 
-        public PurchaseOrderService(ApplicationDbContext context, IMapper mapper)
+        private const int MaxPoGenerationAttempts = 10;
+
+        public PurchaseOrderService(ApplicationDbContext context, IMapper mapper, ILogger<PurchaseOrderService> logger)
         {
             _context = context;
             _mapper = mapper;
+            _logger = logger;
         }
 
-        // ----------------------------
-        // Purchase Orders
-        // ----------------------------
+        private static string GeneratePurchaseOrderNumber()
+        {
+            // Use UTC with milliseconds to reduce collision windows
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmssfff"); // e.g. 20250813-160412123
+                                                                        // cryptographically strong random 4-digit number
+            int rand = RandomNumberGenerator.GetInt32(1000, 10000); // 1000..9999
+            return $"PO-{stamp}-{rand}";
+        }
+
+        private async Task<string> GetUniquePurchaseOrderNumberAsync()
+        {
+            for (int attempt = 1; attempt <= MaxPoGenerationAttempts; attempt++)
+            {
+                var candidate = GeneratePurchaseOrderNumber();
+
+                // quick DB check
+                var exists = await _context.PurchaseOrders
+                    .AsNoTracking()
+                    .AnyAsync(p => p.PurchaseOrderNumber == candidate);
+
+                if (!exists)
+                {
+                    // candidate appears unique — return it
+                    return candidate;
+                }
+
+                _logger.LogWarning("PO number collision on attempt {Attempt} for candidate {Candidate}. Retrying...", attempt, candidate);
+
+                // small delay could be added to reduce thundering if desired:
+                // await Task.Delay(10 * attempt);
+            }
+
+            // If exhausted attempts, fail loudly
+            _logger.LogError("Exhausted {MaxAttempts} attempts to generate a unique PurchaseOrderNumber.", MaxPoGenerationAttempts);
+            throw new InvalidOperationException("Could not generate unique PurchaseOrderNumber. Please try again.");
+        }
+
         public async Task<IEnumerable<PurchaseOrderReadDto>> GetAllAsync()
         {
             var list = await _context.PurchaseOrders
                 .Include(p => p.Supplier)
-                .Include(p => p.PurchaseItems).ThenInclude(pi => pi.Product)
-                .Include(p => p.ReceivedStocks).ThenInclude(rs => rs.Product)
+                .Include(p => p.Items).ThenInclude(i => i.Product)
+                .Include(p => p.Items).ThenInclude(i => i.Unit)
+                .Include(p => p.ReceivedStocks).ThenInclude(rs => rs.PurchaseOrderItem).ThenInclude(pi => pi.Product)
                 .AsNoTracking()
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
@@ -38,300 +80,494 @@ namespace PointOfSaleSystem.Services.Supplier
         {
             var po = await _context.PurchaseOrders
                 .Include(p => p.Supplier)
-                .Include(p => p.PurchaseItems).ThenInclude(pi => pi.Product)
-                .Include(p => p.ReceivedStocks).ThenInclude(rs => rs.Product)
-                .Include(p => p.ReceivedStocks).ThenInclude(rs => rs.ReceivedByUser)
+                .Include(p => p.Items).ThenInclude(i => i.Product)
+                .Include(p => p.Items).ThenInclude(i => i.Unit)
+                .Include(p => p.ReceivedStocks)
+                    .ThenInclude(rs => rs.PurchaseOrderItem)
+                        .ThenInclude(pi => pi.Product)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (po == null) return null;
-            return _mapper.Map<PurchaseOrderReadDto>(po);
+            return po == null ? null : _mapper.Map<PurchaseOrderReadDto>(po);
         }
 
-        public async Task<PurchaseOrderReadDto> CreateAsync(PurchaseOrderCreateDto dto, string userId)
+        // returns POs that have Received status and at least one ReceivedStock.Processed == false
+        public async Task<IEnumerable<PurchaseOrderReadDto>> GetPendingReceivingsAsync()
         {
-            // Map DTO to entity
-            var po = _mapper.Map<PurchaseOrder>(dto);
+            var pending = await _context.PurchaseOrders
+                .Include(p => p.Supplier)
+                .Include(p => p.Items).ThenInclude(i => i.Product)
+                .Include(p => p.Items).ThenInclude(i => i.Unit)
+                .Include(p => p.ReceivedStocks.Where(rs => !rs.Processed))
+                    .ThenInclude(rs => rs.PurchaseOrderItem).ThenInclude(pi => pi.Product)
+                .AsNoTracking()
+                .Where(p => p.Status == PurchaseOrderStatus.Received && p.ReceivedStocks.Any(rs => !rs.Processed))
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
 
-            // Set metadata
-            po.CreatedAt = DateTime.Now;
-            po.CreatedByUserId = userId;
-            // generate PO number (simple scheme: PO-{timestamp}-{random})
-            po.PurchaseOrderNumber = GeneratePurchaseOrderNumber();
+            return _mapper.Map<IEnumerable<PurchaseOrderReadDto>>(pending);
+        }
 
-            // Compute TotalCost from provided items (if any)
-            if (po.PurchaseItems != null && po.PurchaseItems.Any())
+        public async Task PostReceivedToInventoryAsync(int purchaseOrderId, string processedByUserId)
+        {
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
-                po.TotalCost = po.PurchaseItems.Sum(i => i.CostPerUnit * i.Quantity);
+                // load unprocessed received records for this PO including purchase order item & product
+                var recs = await _context.ReceivedStocks
+                    .Include(r => r.PurchaseOrderItem)
+                        .ThenInclude(pi => pi.Product)
+                    .Where(r => r.PurchaseOrderId == purchaseOrderId && !r.Processed)
+                    .ToListAsync();
+
+                if (recs == null || !recs.Any())
+                    throw new InvalidOperationException("No unprocessed received stock found for this purchase order.");
+
+                // Create StockReceive header
+                var stockReceive = new StockReceive
+                {
+                    PurchaseOrderId = purchaseOrderId,
+                    ReceivedDate = DateTime.UtcNow,
+                    ReceivedByUserId = processedByUserId,
+                    ReferenceNumber = $"PO-{purchaseOrderId}-POST-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                    Remarks = "Posted from purchase order receives"
+                };
+                _context.StockReceives.Add(stockReceive);
+
+                // We'll create items and inventory transactions
+                foreach (var rec in recs)
+                {
+                    var poItem = rec.PurchaseOrderItem;
+                    Product? product = poItem?.Product;
+
+                    // fallback to find product by productId if navigation wasn't loaded
+                    if (product == null)
+                    {
+                        product = await _context.Products.FindAsync(rec.ProductId);
+                    }
+
+                    if (product == null)
+                        throw new InvalidOperationException($"Product for ReceivedStock {rec.Id} not found.");
+
+                    // Decide quantities: for simplicity, treat posted quantity as canonical stored quantity.
+                    decimal qty = rec.QuantityReceived;
+                    decimal unitCost = poItem?.UnitCost ?? 0m;
+
+                    // Create StockReceiveItem
+                    var sri = new StockReceiveItem
+                    {
+                        StockReceive = stockReceive,
+                        ProductId = product.Id,
+                        FromUnitId = poItem?.UnitId,
+                        QuantityInFromUnit = qty,
+                        Quantity = qty, // if you have conversions, apply them here
+                        UnitCost = unitCost,
+                        BatchNumber = null,
+                        ExpiryDate = null,
+                        Remarks = rec.Notes
+                    };
+                    _context.StockReceiveItems.Add(sri);
+
+                    // Create InventoryTransaction (positive quantity for StockIn)
+                    var invTx = new InventoryTransaction
+                    {
+                        ProductId = product.Id,
+                        ActionType = InventoryActionType.StockIn,
+                        Quantity = qty,
+                        UnitCost = unitCost,
+                        ReferenceNumber = $"PO#{purchaseOrderId}:R#{rec.Id}",
+                        Remarks = $"Posted from PO receive {rec.Id}",
+                        TransactionDate = DateTime.UtcNow,
+                        PerformedById = processedByUserId,
+                        ReferenceId = null,
+                        ReferenceType = "StockReceive"
+                    };
+                    _context.InventoryTransactions.Add(invTx);
+
+                    product.OnHand += qty;
+                    _context.Products.Update(product);
+
+                    rec.Processed = true;
+                    _context.ReceivedStocks.Update(rec);
+                }
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Failed to post received stock to inventory for PO {PoId}", purchaseOrderId);
+                throw;
+            }
+        }
+
+        public async Task<PurchaseOrderReadDto> CreateAsync(PurchaseOrderCreateDto dto, string createdByUserId)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            // Basic validations
+            var supplier = await _context.Suppliers.FindAsync(dto.SupplierId);
+            if (supplier == null) throw new InvalidOperationException("Supplier not found.");
+
+            // Determine PO number: if provided in DTO use it (and enforce uniqueness); otherwise auto-generate one.
+            string poNumber;
+            if (!string.IsNullOrWhiteSpace(dto.PurchaseOrderNumber))
+            {
+                var exists = await _context.PurchaseOrders.AnyAsync(p => p.PurchaseOrderNumber == dto.PurchaseOrderNumber);
+                if (exists) throw new InvalidOperationException("PurchaseOrderNumber already exists.");
+                poNumber = dto.PurchaseOrderNumber!;
             }
             else
             {
-                po.TotalCost = 0m;
+                poNumber = await GetUniquePurchaseOrderNumberAsync();
             }
 
-            // Persist
-            _context.PurchaseOrders.Add(po);
-            await _context.SaveChangesAsync();
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var po = new PurchaseOrder
+                {
+                    SupplierId = dto.SupplierId,
+                    PurchaseOrderNumber = poNumber,
+                    OrderDate = dto.OrderDate ?? DateTime.UtcNow,
+                    ExpectedDeliveryDate = dto.ExpectedDeliveryDate,
+                    Remarks = dto.Remarks,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = createdByUserId,
+                };
 
-            // Return DTO (map with related names)
-            var created = await _context.PurchaseOrders
-                .Include(p => p.Supplier)
-                .Include(p => p.PurchaseItems).ThenInclude(pi => pi.Product)
-                .Include(p => p.ReceivedStocks)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == po.Id);
+                _context.PurchaseOrders.Add(po);
+                await _context.SaveChangesAsync(); // will set po.Id
 
-            return _mapper.Map<PurchaseOrderReadDto>(created!);
+                decimal totalCost = 0m;
+                // Create items
+                foreach (var itemDto in dto.Items)
+                {
+                    // Validate product exists
+                    var product = await _context.Products.FindAsync(itemDto.ProductId);
+                    if (product == null)
+                        throw new InvalidOperationException($"Product id {itemDto.ProductId} not found.");
+
+                    // Optional: validate Unit exists
+                    var unit = await _context.Units.FindAsync(itemDto.UnitId);
+                    if (unit == null)
+                        throw new InvalidOperationException($"Unit id {itemDto.UnitId} not found.");
+
+                    var item = new PurchaseOrderItem
+                    {
+                        PurchaseOrderId = po.Id,
+                        ProductId = itemDto.ProductId,
+                        UnitId = itemDto.UnitId,
+                        QuantityOrdered = itemDto.QuantityOrdered,
+                        QuantityReceived = 0m,
+                        UnitCost = itemDto.UnitCost,
+                        Remarks = itemDto.Remarks
+                    };
+
+                    _context.PurchaseOrderItems.Add(item);
+
+                    totalCost += itemDto.QuantityOrdered * itemDto.UnitCost;
+                }
+
+                // Persist items
+                await _context.SaveChangesAsync();
+
+                // Update PO total cost
+                po.TotalCost = totalCost;
+                _context.PurchaseOrders.Update(po);
+                await _context.SaveChangesAsync();
+
+                await tx.CommitAsync();
+
+                // Reload with includes to return the DTO
+                var created = await _context.PurchaseOrders
+                    .Include(p => p.Supplier)
+                    .Include(p => p.Items).ThenInclude(i => i.Product)
+                    .Include(p => p.Items).ThenInclude(i => i.Unit)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == po.Id);
+
+                return _mapper.Map<PurchaseOrderReadDto>(created!);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create PurchaseOrder {PoNumber}", poNumber);
+                await tx.RollbackAsync();
+                throw;
+            }
         }
 
-        public async Task<bool> UpdateAsync(int id, PurchaseOrderUpdateDto dto)
+        public async Task<PurchaseOrderReadDto> UpdateAsync(PurchaseOrderUpdateDto dto, string updatedByUserId)
         {
-            var po = await _context.PurchaseOrders.FindAsync(id);
-            if (po == null) return false;
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            // Map fields from DTO to entity (excluding collections)
-            _mapper.Map(dto, po);
+            var po = await _context.PurchaseOrders
+                .Include(p => p.Items)
+                .Include(p => p.ReceivedStocks).ThenInclude(rs => rs.PurchaseOrderItem).ThenInclude(pi => pi.Product)
+                .FirstOrDefaultAsync(p => p.Id == dto.Id);
 
-            // Recompute total cost if needed (we assume items may have changed separately)
-            var items = await _context.PurchaseItems
-                .Where(pi => pi.PurchaseOrderId == id)
-                .ToListAsync();
+            if (po == null) throw new KeyNotFoundException("Purchase order not found.");
 
-            po.TotalCost = items.Sum(i => i.CostPerUnit * i.Quantity);
+            // Validate supplier
+            var supplier = await _context.Suppliers.FindAsync(dto.SupplierId);
+            if (supplier == null) throw new InvalidOperationException("Supplier not found.");
 
-            _context.Entry(po).State = EntityState.Modified;
-            return await _context.SaveChangesAsync() > 0;
+            // Check unique PO number (exclude self)
+            var exists = await _context.PurchaseOrders
+                .AnyAsync(p => p.PurchaseOrderNumber == dto.PurchaseOrderNumber && p.Id != dto.Id);
+            if (exists) throw new InvalidOperationException("PurchaseOrderNumber already exists.");
+
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Update header
+                po.SupplierId = dto.SupplierId;
+                po.PurchaseOrderNumber = dto.PurchaseOrderNumber;
+                po.ExpectedDeliveryDate = dto.ExpectedDeliveryDate;
+                po.Remarks = dto.Remarks;
+                // Optionally update CreatedBy/CreatedAt? Usually keep original.
+
+                // Reconcile items: update existing, add new, remove missing
+                var incomingById = dto.Items.Where(i => i.Id.HasValue).ToDictionary(i => i.Id!.Value);
+                var existingItems = po.Items.ToList();
+
+                // Update existing items
+                foreach (var existing in existingItems)
+                {
+                    if (incomingById.TryGetValue(existing.Id, out var updDto))
+                    {
+                        // Update fields
+                        existing.ProductId = updDto.ProductId;
+                        existing.UnitId = updDto.UnitId;
+                        existing.QuantityOrdered = updDto.QuantityOrdered;
+                        // NOTE: do not reduce QuantityReceived here — that is a separate business action
+                        existing.UnitCost = updDto.UnitCost;
+                        existing.Remarks = updDto.Remarks;
+                    }
+                    else
+                    {
+                        // incoming does not contain this item -> delete it (only if no received qty)
+                        if (existing.QuantityReceived > 0)
+                            throw new InvalidOperationException("Cannot remove a line that has received quantity.");
+                        _context.PurchaseOrderItems.Remove(existing);
+                    }
+                }
+
+                // Add new items
+                var newItems = dto.Items.Where(i => !i.Id.HasValue).ToList();
+                foreach (var newDto in newItems)
+                {
+                    var product = await _context.Products.FindAsync(newDto.ProductId);
+                    if (product == null) throw new InvalidOperationException($"Product id {newDto.ProductId} not found.");
+                    var unit = await _context.Units.FindAsync(newDto.UnitId);
+                    if (unit == null) throw new InvalidOperationException($"Unit id {newDto.UnitId} not found.");
+
+                    var newItem = new PurchaseOrderItem
+                    {
+                        PurchaseOrderId = po.Id,
+                        ProductId = newDto.ProductId,
+                        UnitId = newDto.UnitId,
+                        QuantityOrdered = newDto.QuantityOrdered,
+                        QuantityReceived = 0m,
+                        UnitCost = newDto.UnitCost,
+                        Remarks = newDto.Remarks
+                    };
+                    _context.PurchaseOrderItems.Add(newItem);
+                }
+
+                // Recompute total cost
+                await _context.SaveChangesAsync(); // persist item updates/adds/removals
+                var refreshedItems = await _context.PurchaseOrderItems.Where(i => i.PurchaseOrderId == po.Id).ToListAsync();
+                po.TotalCost = refreshedItems.Sum(i => i.QuantityOrdered * i.UnitCost);
+
+                _context.PurchaseOrders.Update(po);
+                await _context.SaveChangesAsync();
+
+                await tx.CommitAsync();
+
+                var updated = await _context.PurchaseOrders
+                    .Include(p => p.Supplier)
+                    .Include(p => p.Items).ThenInclude(i => i.Product)
+                    .Include(p => p.Items).ThenInclude(i => i.Unit)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == po.Id);
+
+                return _mapper.Map<PurchaseOrderReadDto>(updated!);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update PurchaseOrder {PoId}", dto.Id);
+                await tx.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
             var po = await _context.PurchaseOrders
-                .Include(p => p.PurchaseItems)
-                .Include(p => p.ReceivedStocks)
+                .Include(p => p.Items)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (po == null) return false;
 
-            // Optional: prevent deleting if any received stocks exist
-            if (po.ReceivedStocks != null && po.ReceivedStocks.Any())
-            {
-                // business rule: don't delete POs with received stock
-                return false;
-            }
+            // Business rule: do not delete PO that has received quantities (use cancel instead)
+            if (po.Items.Any(i => i.QuantityReceived > 0))
+                throw new InvalidOperationException("Cannot delete purchase order with received items.");
 
-            // Remove items first (cascade may handle this but be explicit)
-            if (po.PurchaseItems != null && po.PurchaseItems.Any())
-            {
-                _context.PurchaseItems.RemoveRange(po.PurchaseItems);
-            }
-
+            _context.PurchaseOrderItems.RemoveRange(po.Items);
             _context.PurchaseOrders.Remove(po);
-            return await _context.SaveChangesAsync() > 0;
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        // ----------------------------
-        // Purchase Items
-        // ----------------------------
-        public async Task<PurchaseItemReadDto> AddPurchaseItemAsync(int purchaseOrderId, PurchaseItemCreateDto dto)
+        public async Task<ReceivedStockReadDto> ReceiveStockAsync(ReceiveStockCreateDto dto, string receivedByUserId)
         {
-            var po = await _context.PurchaseOrders.FindAsync(purchaseOrderId);
-            if (po == null) throw new KeyNotFoundException("Purchase order not found");
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            var item = _mapper.Map<PurchaseItem>(dto);
-            item.PurchaseOrderId = purchaseOrderId;
-            item.ReceivedQuantity = item.ReceivedQuantity ?? 0;
-
-            await using var tx = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                _context.PurchaseItems.Add(item);
-                // update PO total
-                po.TotalCost += item.CostPerUnit * item.Quantity;
-
-                await _context.SaveChangesAsync();
-                await tx.CommitAsync();
-
-                // return read dto (include product name)
-                var added = await _context.PurchaseItems
-                    .Include(pi => pi.Product)
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(pi => pi.Id == item.Id);
-
-                return _mapper.Map<PurchaseItemReadDto>(added!);
-            }
-            catch
-            {
-                await tx.RollbackAsync();
-                throw;
-            }
-        }
-
-        public async Task<bool> UpdatePurchaseItemAsync(int id, PurchaseItemUpdateDto dto)
-        {
-            var item = await _context.PurchaseItems.FindAsync(id);
-            if (item == null) return false;
-
-            // Load parent PO to adjust totals
-            var po = await _context.PurchaseOrders.FindAsync(item.PurchaseOrderId);
-            if (po == null) return false;
-
-            // compute old total line cost
-            var oldLine = item.CostPerUnit * item.Quantity;
-
-            // map updates
-            _mapper.Map(dto, item);
-
-            // compute new line and adjust PO total
-            var newLine = item.CostPerUnit * item.Quantity;
-            po.TotalCost = (po.TotalCost - oldLine) + newLine;
-
-            _context.Entry(item).State = EntityState.Modified;
-            _context.Entry(po).State = EntityState.Modified;
-
-            return await _context.SaveChangesAsync() > 0;
-        }
-
-        public async Task<bool> RemovePurchaseItemAsync(int id)
-        {
-            var item = await _context.PurchaseItems.FindAsync(id);
-            if (item == null) return false;
-
-            var po = await _context.PurchaseOrders.FindAsync(item.PurchaseOrderId);
-            if (po == null) return false;
-
-            // prevent removing an item that already has received quantity > 0
-            if (item.ReceivedQuantity.HasValue && item.ReceivedQuantity.Value > 0)
-            {
-                // business rule: cannot remove line if already received some stock
-                return false;
-            }
-
-            // adjust PO total
-            po.TotalCost -= item.CostPerUnit * item.Quantity;
-
-            _context.PurchaseItems.Remove(item);
-            _context.Entry(po).State = EntityState.Modified;
-
-            return await _context.SaveChangesAsync() > 0;
-        }
-
-        // ----------------------------
-        // Received Stocks
-        // ----------------------------
-        public async Task<ReceivedStockReadDto> AddReceivedStockAsync(ReceivedStockCreateDto dto, string userId)
-        {
-            // Validate PO and item existence
+            // Validate PO + item exist
             var po = await _context.PurchaseOrders
-                .Include(p => p.PurchaseItems)
+                .Include(p => p.Items)
+                .ThenInclude(i => i.Product)
                 .FirstOrDefaultAsync(p => p.Id == dto.PurchaseOrderId);
 
-            if (po == null) throw new KeyNotFoundException("Purchase order not found");
+            if (po == null) throw new InvalidOperationException("Purchase order not found.");
 
-            var item = po.PurchaseItems?.FirstOrDefault(pi => pi.ProductId == dto.ProductId);
-            if (item == null) throw new KeyNotFoundException("Purchase item not found on purchase order");
+            var item = await _context.PurchaseOrderItems
+                .FirstOrDefaultAsync(i => i.Id == dto.PurchaseOrderItemId && i.PurchaseOrderId == dto.PurchaseOrderId);
 
-            // Check remaining quantity
-            var alreadyReceived = item.ReceivedQuantity ?? 0;
-            var remaining = item.Quantity - alreadyReceived;
-            if (dto.QuantityReceived > remaining)
-            {
-                throw new InvalidOperationException("Quantity received exceeds remaining quantity for this item.");
-            }
+            if (item == null) throw new InvalidOperationException("Purchase order item not found.");
 
-            var rs = _mapper.Map<ReceivedStock>(dto);
-            rs.ReceivedByUserId = userId;
-            rs.ReceivedDate = dto.ReceivedDate ?? DateTime.Now;
+            var remaining = item.QuantityOrdered - item.QuantityReceived;
+            if (dto.QuantityReceived <= 0 || dto.QuantityReceived > remaining)
+                throw new InvalidOperationException($"QuantityReceived must be > 0 and <= remaining ({remaining}).");
 
-            await using var tx = await _context.Database.BeginTransactionAsync();
+            using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                _context.ReceivedStocks.Add(rs);
-
-                // update PurchaseItem.ReceivedQuantity
-                item.ReceivedQuantity = (item.ReceivedQuantity ?? 0) + dto.QuantityReceived;
-
-                // Optional: update InventoryTransactionId linking here if you create inventory transaction separately
-
-                // If all items fully received, mark PO.IsReceived true
-                var allReceived = po.PurchaseItems != null && po.PurchaseItems.All(pi => (pi.ReceivedQuantity ?? 0) >= pi.Quantity);
-                if (allReceived)
+                var rec = new ReceivedStock
                 {
-                    po.IsReceived = true;
-                    po.Status = PointOfSaleSystem.Enums.PurchaseOrderStatus.Received;
-                }
+                    PurchaseOrderId = dto.PurchaseOrderId,
+                    PurchaseOrderItemId = dto.PurchaseOrderItemId,
+                    ProductId = item.ProductId,                // <-- set product id here
+                    QuantityReceived = dto.QuantityReceived,
+                    ReceivedDate = dto.ReceivedDate ?? DateTime.UtcNow,
+                    ReferenceNumber = dto.ReferenceNumber,
+                    Notes = dto.Notes,
+                    ReceivedByUserId = receivedByUserId,
+                    Processed = false
+                };
 
-                // Save changes
+
+                _context.ReceivedStocks.Add(rec);
+
+                // adjust item received qty
+                item.QuantityReceived += dto.QuantityReceived;
+
+                // update PO status: compute aggregate received status
+                var refreshedItems = po.Items; // includes items collection
+                                               // we updated item.QuantityReceived in memory; recompute
+                var anyReceived = refreshedItems.Any(i => i.QuantityReceived > 0);
+                var allReceived = refreshedItems.All(i => i.QuantityReceived >= i.QuantityOrdered);
+
+                po.Status = allReceived ? PurchaseOrderStatus.Received :
+                            (anyReceived ? PurchaseOrderStatus.PartiallyReceived : po.Status);
+
+                // optionally set IsReceived flag
+                po.IsReceived = allReceived;
+
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
 
+                // reload created rec with navigation
                 var created = await _context.ReceivedStocks
-                    .Include(r => r.Product)
-                    .Include(r => r.ReceivedByUser)
+                    .Include(r => r.PurchaseOrderItem).ThenInclude(i => i.Product)
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(r => r.Id == rs.Id);
+                    .FirstOrDefaultAsync(r => r.Id == rec.Id);
 
                 return _mapper.Map<ReceivedStockReadDto>(created!);
             }
-            catch
+            catch (Exception ex)
             {
                 await tx.RollbackAsync();
+                _logger.LogError(ex, "Failed to receive stock for PO {PoId}", dto.PurchaseOrderId);
                 throw;
             }
         }
 
-        public async Task<bool> DeleteReceivedStockAsync(int id)
+        public async Task<bool> DeleteReceivedStockAsync(int receivedStockId)
         {
-            var rs = await _context.ReceivedStocks.FindAsync(id);
-            if (rs == null) return false;
+            var rec = await _context.ReceivedStocks
+                .Include(r => r.PurchaseOrderItem)
+                .FirstOrDefaultAsync(r => r.Id == receivedStockId);
 
-            // Find the corresponding purchase item
-            var item = await _context.PurchaseItems
-                .FirstOrDefaultAsync(pi => pi.PurchaseOrderId == rs.PurchaseOrderId && pi.ProductId == rs.ProductId);
+            if (rec == null) return false;
 
-            if (item == null) return false;
-
-            await using var tx = await _context.Database.BeginTransactionAsync();
+            using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                // decrease received quantity (ensure non-negative)
-                item.ReceivedQuantity = Math.Max(0, (item.ReceivedQuantity ?? 0) - rs.QuantityReceived);
+                // adjust related item
+                var item = rec.PurchaseOrderItem;
+                if (item == null) throw new InvalidOperationException("Related purchase order item not found.");
 
-                // If we deleted a received record, PO.IsReceived should be re-evaluated
+                // Decrease received quantity but not below zero
+                item.QuantityReceived = Math.Max(0, item.QuantityReceived - rec.QuantityReceived);
+
+                _context.ReceivedStocks.Remove(rec);
+
+                // update parent PO status
                 var po = await _context.PurchaseOrders
-                    .Include(p => p.PurchaseItems)
-                    .FirstOrDefaultAsync(p => p.Id == rs.PurchaseOrderId);
+                    .Include(p => p.Items)
+                    .FirstOrDefaultAsync(p => p.Id == rec.PurchaseOrderId);
 
                 if (po != null)
                 {
-                    po.IsReceived = !(po.PurchaseItems != null && po.PurchaseItems.Any(pi => (pi.ReceivedQuantity ?? 0) < pi.Quantity));
-                    if (!po.IsReceived)
-                    {
-                        po.Status = PointOfSaleSystem.Enums.PurchaseOrderStatus.PartiallyReceived;
-                    }
+                    var anyReceived = po.Items.Any(i => i.QuantityReceived > 0);
+                    var allReceived = po.Items.All(i => i.QuantityReceived >= i.QuantityOrdered);
+                    po.Status = allReceived ? PurchaseOrderStatus.Received :
+                                (anyReceived ? PurchaseOrderStatus.PartiallyReceived : PurchaseOrderStatus.Draft);
+                    po.IsReceived = allReceived;
                 }
 
-                _context.ReceivedStocks.Remove(rs);
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
-
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
                 await tx.RollbackAsync();
+                _logger.LogError(ex, "Failed to delete received stock {Id}", receivedStockId);
                 throw;
             }
         }
 
-        // ----------------------------
-        // Helper
-        // ----------------------------
-        private string GeneratePurchaseOrderNumber()
+        public async Task<bool> RemoveItemByIdAsync(int purchaseOrderItemId)
         {
-            // Basic: PO-YYYYMMDD-HHMMSS-XXXX
-            var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-            var rand = new Random().Next(1000, 9999);
-            return $"PO-{stamp}-{rand}";
+            var item = await _context.PurchaseOrderItems
+                .Include(i => i.PurchaseOrder)
+                .FirstOrDefaultAsync(i => i.Id == purchaseOrderItemId);
+
+            if (item == null) return false;
+
+            if (item.QuantityReceived > 0)
+                throw new InvalidOperationException("Cannot remove item that has received quantity.");
+
+            _context.PurchaseOrderItems.Remove(item);
+
+            // update PO total cost
+            var po = item.PurchaseOrder;
+            if (po != null)
+            {
+                var refreshedItems = await _context.PurchaseOrderItems
+                    .Where(i => i.PurchaseOrderId == po.Id)
+                    .ToListAsync();
+                po.TotalCost = refreshedItems.Sum(i => i.QuantityOrdered * i.UnitCost);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
         }
+
+
     }
 }

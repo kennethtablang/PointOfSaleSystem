@@ -37,5 +37,8 @@ namespace PointOfSaleSystem.Models.Inventory
 
         [ForeignKey("PerformedById")]
         public ApplicationUser? PerformedByUser { get; set; }
+
+        public int? ReferenceId { get; set; }
+        public string? ReferenceType { get; set; }
     }
 }

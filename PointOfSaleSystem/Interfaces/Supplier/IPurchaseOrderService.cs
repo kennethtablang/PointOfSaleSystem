@@ -7,17 +7,16 @@ namespace PointOfSaleSystem.Interfaces.Supplier
         // Purchase Orders
         Task<IEnumerable<PurchaseOrderReadDto>> GetAllAsync();
         Task<PurchaseOrderReadDto?> GetByIdAsync(int id);
-        Task<PurchaseOrderReadDto> CreateAsync(PurchaseOrderCreateDto dto, string userId);
-        Task<bool> UpdateAsync(int id, PurchaseOrderUpdateDto dto);
-        Task<bool> DeleteAsync(int id);
+        Task<PurchaseOrderReadDto> CreateAsync(PurchaseOrderCreateDto dto, string createdByUserId);
+        Task<PurchaseOrderReadDto> UpdateAsync(PurchaseOrderUpdateDto dto, string updatedByUserId);
+        Task<bool> DeleteAsync(int id); // returns true if deleted
 
-        // Purchase Items (related to PO)
-        Task<PurchaseItemReadDto> AddPurchaseItemAsync(int purchaseOrderId, PurchaseItemCreateDto dto);
-        Task<bool> UpdatePurchaseItemAsync(int id, PurchaseItemUpdateDto dto);
-        Task<bool> RemovePurchaseItemAsync(int id);
+        Task<ReceivedStockReadDto> ReceiveStockAsync(ReceiveStockCreateDto dto, string receivedByUserId);
+        Task<bool> DeleteReceivedStockAsync(int receivedStockId);
+        Task<bool> RemoveItemByIdAsync(int purchaseOrderItemId);
 
-        // Received Stocks (related to PO)
-        Task<ReceivedStockReadDto> AddReceivedStockAsync(ReceivedStockCreateDto dto, string userId);
-        Task<bool> DeleteReceivedStockAsync(int id);
+        Task<IEnumerable<PurchaseOrderReadDto>> GetPendingReceivingsAsync();
+        Task PostReceivedToInventoryAsync(int purchaseOrderId, string processedByUserId);
+
     }
 }

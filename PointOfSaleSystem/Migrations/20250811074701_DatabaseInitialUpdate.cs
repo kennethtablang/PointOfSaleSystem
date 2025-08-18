@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PointOfSaleSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class MajorModelUpdate : Migration
+    public partial class DatabaseInitialUpdate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -85,7 +85,8 @@ namespace PointOfSaleSystem.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
+                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -254,7 +255,8 @@ namespace PointOfSaleSystem.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Abbreviation = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UnitType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AllowsDecimal = table.Column<bool>(type: "bit", nullable: false)
+                    AllowsDecimal = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -438,12 +440,15 @@ namespace PointOfSaleSystem.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Module = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ActionType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Module = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ActionType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ReferenceType = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ReferenceId = table.Column<int>(type: "int", nullable: true),
                     DataBefore = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DataAfter = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IPAddress = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    IPAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
+                    LogLevel = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -629,7 +634,7 @@ namespace PointOfSaleSystem.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
-                    PurchaseOrderNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    PurchaseOrderNumber = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsReceived = table.Column<bool>(type: "bit", nullable: false),
                     Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -688,7 +693,7 @@ namespace PointOfSaleSystem.Migrations
                         column: x => x.UnitId,
                         principalTable: "Units",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -748,6 +753,35 @@ namespace PointOfSaleSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "StockReceives",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
+                    ReceivedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReceivedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ReferenceNumber = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockReceives", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StockReceives_AspNetUsers_ReceivedByUserId",
+                        column: x => x.ReceivedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StockReceives_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "BadOrders",
                 columns: table => new
                 {
@@ -790,7 +824,9 @@ namespace PointOfSaleSystem.Migrations
                     ReferenceNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PerformedById = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    PerformedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ReferenceId = table.Column<int>(type: "int", nullable: true),
+                    ReferenceType = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -854,7 +890,7 @@ namespace PointOfSaleSystem.Migrations
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ProductUnitConversions_Units_FromUnitId",
                         column: x => x.FromUnitId,
@@ -870,7 +906,7 @@ namespace PointOfSaleSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PurchaseItems",
+                name: "PurchaseItem",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -878,26 +914,66 @@ namespace PointOfSaleSystem.Migrations
                     PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     CostPerUnit = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    ReceivedQuantity = table.Column<int>(type: "int", nullable: true),
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    ReceivedQuantity = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PurchaseItems", x => x.Id);
+                    table.PrimaryKey("PK_PurchaseItem", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PurchaseItems_Products_ProductId",
+                        name: "FK_PurchaseItem_Products_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_PurchaseItems_PurchaseOrders_PurchaseOrderId",
+                        name: "FK_PurchaseItem_PurchaseOrders_PurchaseOrderId",
                         column: x => x.PurchaseOrderId,
                         principalTable: "PurchaseOrders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "PurchaseOrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    UnitId = table.Column<int>(type: "int", nullable: false),
+                    QuantityOrdered = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    QuantityReceived = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    UnitCost = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Remarks = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseOrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderItems_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderItems_Units_UnitId",
+                        column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                },
+                comment: "Purchase order line items");
 
             migrationBuilder.CreateTable(
                 name: "TopSellingProductLogs",
@@ -1128,50 +1204,6 @@ namespace PointOfSaleSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ReceivedStocks",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
-                    QuantityReceived = table.Column<int>(type: "int", nullable: false),
-                    ReceivedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReferenceNumber = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ReceivedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    InventoryTransactionId = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ReceivedStocks", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ReceivedStocks_AspNetUsers_ReceivedByUserId",
-                        column: x => x.ReceivedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_ReceivedStocks_InventoryTransactions_InventoryTransactionId",
-                        column: x => x.InventoryTransactionId,
-                        principalTable: "InventoryTransactions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_ReceivedStocks_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ReceivedStocks_PurchaseOrders_PurchaseOrderId",
-                        column: x => x.PurchaseOrderId,
-                        principalTable: "PurchaseOrders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "StockAdjustments",
                 columns: table => new
                 {
@@ -1209,6 +1241,50 @@ namespace PointOfSaleSystem.Migrations
                     table.ForeignKey(
                         name: "FK_StockAdjustments_Units_UnitId",
                         column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockReceiveItem",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StockReceiveId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    FromUnitId = table.Column<int>(type: "int", nullable: true),
+                    QuantityInFromUnit = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    UnitCost = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    BatchNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    InventoryTransactionId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockReceiveItem", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StockReceiveItem_InventoryTransactions_InventoryTransactionId",
+                        column: x => x.InventoryTransactionId,
+                        principalTable: "InventoryTransactions",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_StockReceiveItem_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StockReceiveItem_StockReceives_StockReceiveId",
+                        column: x => x.StockReceiveId,
+                        principalTable: "StockReceives",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StockReceiveItem_Units_FromUnitId",
+                        column: x => x.FromUnitId,
                         principalTable: "Units",
                         principalColumn: "Id");
                 });
@@ -1440,19 +1516,40 @@ namespace PointOfSaleSystem.Migrations
                 column: "ToUnitId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PurchaseItems_ProductId",
-                table: "PurchaseItems",
+                name: "IX_PurchaseItem_ProductId",
+                table: "PurchaseItem",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PurchaseItems_PurchaseOrderId",
-                table: "PurchaseItems",
+                name: "IX_PurchaseItem_PurchaseOrderId",
+                table: "PurchaseItem",
                 column: "PurchaseOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderItems_ProductId",
+                table: "PurchaseOrderItems",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderItems_PurchaseOrderId_ProductId",
+                table: "PurchaseOrderItems",
+                columns: new[] { "PurchaseOrderId", "ProductId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderItems_UnitId",
+                table: "PurchaseOrderItems",
+                column: "UnitId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrders_CreatedByUserId",
                 table: "PurchaseOrders",
                 column: "CreatedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_PurchaseOrderNumber",
+                table: "PurchaseOrders",
+                column: "PurchaseOrderNumber",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrders_SupplierId",
@@ -1468,28 +1565,6 @@ namespace PointOfSaleSystem.Migrations
                 name: "IX_ReceiptLogs_SaleId",
                 table: "ReceiptLogs",
                 column: "SaleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ReceivedStocks_InventoryTransactionId",
-                table: "ReceivedStocks",
-                column: "InventoryTransactionId",
-                unique: true,
-                filter: "[InventoryTransactionId] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ReceivedStocks_ProductId",
-                table: "ReceivedStocks",
-                column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ReceivedStocks_PurchaseOrderId",
-                table: "ReceivedStocks",
-                column: "PurchaseOrderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ReceivedStocks_ReceivedByUserId",
-                table: "ReceivedStocks",
-                column: "ReceivedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ReportExportLogs_ExportedByUserId",
@@ -1590,6 +1665,51 @@ namespace PointOfSaleSystem.Migrations
                 name: "IX_StockAdjustments_UnitId",
                 table: "StockAdjustments",
                 column: "UnitId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockReceiveItem_FromUnitId",
+                table: "StockReceiveItem",
+                column: "FromUnitId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockReceiveItem_InventoryTransactionId",
+                table: "StockReceiveItem",
+                column: "InventoryTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockReceiveItem_ProductId",
+                table: "StockReceiveItem",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockReceiveItem_StockReceiveId",
+                table: "StockReceiveItem",
+                column: "StockReceiveId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockReceives_PurchaseOrderId",
+                table: "StockReceives",
+                column: "PurchaseOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockReceives_ReceivedByUserId",
+                table: "StockReceives",
+                column: "ReceivedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SystemLogs_Module",
+                table: "SystemLogs",
+                column: "Module");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SystemLogs_ReferenceType_ReferenceId",
+                table: "SystemLogs",
+                columns: new[] { "ReferenceType", "ReferenceId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SystemLogs_Timestamp",
+                table: "SystemLogs",
+                column: "Timestamp");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SystemLogs_UserId",
@@ -1712,16 +1832,16 @@ namespace PointOfSaleSystem.Migrations
                 name: "ProductUnitConversions");
 
             migrationBuilder.DropTable(
-                name: "PurchaseItems");
+                name: "PurchaseItem");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseOrderItems");
 
             migrationBuilder.DropTable(
                 name: "ReceiptLogs");
 
             migrationBuilder.DropTable(
                 name: "ReceiptSettings");
-
-            migrationBuilder.DropTable(
-                name: "ReceivedStocks");
 
             migrationBuilder.DropTable(
                 name: "ReportExportLogs");
@@ -1737,6 +1857,9 @@ namespace PointOfSaleSystem.Migrations
 
             migrationBuilder.DropTable(
                 name: "StockAdjustments");
+
+            migrationBuilder.DropTable(
+                name: "StockReceiveItem");
 
             migrationBuilder.DropTable(
                 name: "SystemLogs");
@@ -1763,22 +1886,22 @@ namespace PointOfSaleSystem.Migrations
                 name: "SaleItems");
 
             migrationBuilder.DropTable(
-                name: "PurchaseOrders");
-
-            migrationBuilder.DropTable(
                 name: "ReturnTransactions");
 
             migrationBuilder.DropTable(
                 name: "InventoryTransactions");
 
             migrationBuilder.DropTable(
-                name: "Suppliers");
+                name: "StockReceives");
 
             migrationBuilder.DropTable(
                 name: "Sales");
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseOrders");
 
             migrationBuilder.DropTable(
                 name: "XReadings");
@@ -1791,6 +1914,9 @@ namespace PointOfSaleSystem.Migrations
 
             migrationBuilder.DropTable(
                 name: "Units");
+
+            migrationBuilder.DropTable(
+                name: "Suppliers");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

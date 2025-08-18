@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PointOfSaleSystem.Data;
 
@@ -11,9 +12,11 @@ using PointOfSaleSystem.Data;
 namespace PointOfSaleSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250814014544_UpdateReceivedStocks")]
+    partial class UpdateReceivedStocks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -384,12 +387,6 @@ namespace PointOfSaleSystem.Migrations
                     b.Property<DateTime>("BadOrderDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("InventoryTransactionId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsSystemGenerated")
-                        .HasColumnType("bit");
-
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -410,8 +407,6 @@ namespace PointOfSaleSystem.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("InventoryTransactionId");
 
                     b.HasIndex("ProductId");
 
@@ -528,10 +523,6 @@ namespace PointOfSaleSystem.Migrations
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
-
-                    b.Property<decimal>("OnHand")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
@@ -730,7 +721,7 @@ namespace PointOfSaleSystem.Migrations
 
                     b.HasIndex("StockReceiveId");
 
-                    b.ToTable("StockReceiveItems");
+                    b.ToTable("StockReceiveItem");
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.Unit", b =>
@@ -2024,9 +2015,6 @@ namespace PointOfSaleSystem.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<bool>("Processed")
-                        .HasColumnType("bit");
-
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -2180,10 +2168,6 @@ namespace PointOfSaleSystem.Migrations
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.BadOrder", b =>
                 {
-                    b.HasOne("PointOfSaleSystem.Models.Inventory.InventoryTransaction", "InventoryTransaction")
-                        .WithMany()
-                        .HasForeignKey("InventoryTransactionId");
-
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -2195,8 +2179,6 @@ namespace PointOfSaleSystem.Migrations
                         .HasForeignKey("ReportedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("InventoryTransaction");
 
                     b.Navigation("Product");
 
@@ -2752,7 +2734,7 @@ namespace PointOfSaleSystem.Migrations
             modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.ReceivedStock", b =>
                 {
                     b.HasOne("PointOfSaleSystem.Models.Suppliers.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("ReceivedStocks")
+                        .WithMany()
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2835,8 +2817,6 @@ namespace PointOfSaleSystem.Migrations
             modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.PurchaseOrder", b =>
                 {
                     b.Navigation("Items");
-
-                    b.Navigation("ReceivedStocks");
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.Supplier", b =>

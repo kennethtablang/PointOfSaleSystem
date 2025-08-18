@@ -5,7 +5,7 @@
 namespace PointOfSaleSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class AddProductUpdate : Migration
+    public partial class UpdateReceivedStocks2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

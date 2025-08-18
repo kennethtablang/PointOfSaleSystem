@@ -31,6 +31,7 @@ namespace PointOfSaleSystem.Data
         public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
         public DbSet<ProductUnitConversion> ProductUnitConversions { get; set; }
         public DbSet<StockAdjustment> StockAdjustments { get; set; }
+        public DbSet<StockReceive> StockReceives { get; set; }
 
         //Printing
         public DbSet<BackupLog> BackupLogs { get; set; }
@@ -66,16 +67,15 @@ namespace PointOfSaleSystem.Data
         public DbSet<ZReading> ZReadings { get; set; }
 
         //Suppliers
-        public DbSet<PurchaseItem> PurchaseItems { get; set; }
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
-        public DbSet<ReceivedStock> ReceivedStocks { get; set; }
         public DbSet<Supplier> Suppliers { get; set; }
-
+        public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+        public DbSet<ReceivedStock> ReceivedStocks { get; set; }
+        public DbSet<StockReceiveItem> StockReceiveItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
 
             builder.Entity<ApplicationUser>(entity =>
             {
@@ -106,41 +106,35 @@ namespace PointOfSaleSystem.Data
                 .IsUnique()
                 .HasFilter("[Barcode] IS NOT NULL");
 
-            builder.Entity<PurchaseItem>()
-                .HasOne(pi => pi.PurchaseOrder)
-                .WithMany(po => po.PurchaseItems)
-                .HasForeignKey(pi => pi.PurchaseOrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<Product>()
+                .HasOne(p => p.Unit)
+                .WithMany(u => u.Products)
+                .HasForeignKey(p => p.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<PurchaseOrderItem>()
+                .HasOne(i => i.PurchaseOrder)
+                .WithMany(po => po.Items)
+                .HasForeignKey(i => i.PurchaseOrderId)
+                .OnDelete(DeleteBehavior.Restrict); // prevent multiple cascade path
+
+            builder.Entity<PurchaseOrderItem>()
+                .HasOne(i => i.Product)
+                .WithMany()
+                .HasForeignKey(i => i.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<PurchaseOrderItem>()
+                .HasOne(i => i.Unit)
+                .WithMany()
+                .HasForeignKey(i => i.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<PurchaseItem>()
                 .HasOne(pi => pi.Product)
                 .WithMany()
                 .HasForeignKey(pi => pi.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<ReceivedStock>()
-                .HasOne(rs => rs.PurchaseOrder)
-                .WithMany(po => po.ReceivedStocks)
-                .HasForeignKey(rs => rs.PurchaseOrderId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<ReceivedStock>()
-                .HasOne(rs => rs.Product)
-                .WithMany()
-                .HasForeignKey(rs => rs.ProductId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<ReceivedStock>()
-                .HasOne(rs => rs.ReceivedByUser)
-                .WithMany()
-                .HasForeignKey(rs => rs.ReceivedByUserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            builder.Entity<ReceivedStock>()
-                .HasOne(rs => rs.InventoryTransaction)
-                .WithOne()
-                .HasForeignKey<ReceivedStock>(rs => rs.InventoryTransactionId)
-                .OnDelete(DeleteBehavior.SetNull);
 
             builder.Entity<ProductUnitConversion>()
                 .HasOne(puc => puc.FromUnit)
@@ -225,5 +219,7 @@ namespace PointOfSaleSystem.Data
                 .HasForeignKey(v => v.SaleId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
+
+
     }
 }

@@ -32,10 +32,21 @@ namespace PointOfSaleSystem.Profiles
                     string.Join(" ", new[] { src.User.FirstName, src.User.MiddleName, src.User.LastName }
                         .Where(n => !string.IsNullOrWhiteSpace(n)))));
 
+            // In your AutoMapper profile (e.g., SupplierProfile or a dedicated AuthProfile)
             CreateMap<SystemLog, SystemLogDto>()
                 .ForMember(dest => dest.PerformedBy, opt => opt.MapFrom(src =>
-                    src.User != null ? string.Join(" ", new[] { src.User.FirstName, src.User.MiddleName, src.User.LastName }
-                        .Where(n => !string.IsNullOrWhiteSpace(n))) : null));
+                    src.User != null
+                        ? string.Join(" ", new[] { src.User.FirstName, src.User.MiddleName, src.User.LastName }
+                            .Where(n => !string.IsNullOrWhiteSpace(n)))
+                        : null))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.Timestamp, opt => opt.MapFrom(src => src.Timestamp))
+                .ForMember(dest => dest.DataBefore, opt => opt.MapFrom(src => src.DataBefore))
+                .ForMember(dest => dest.DataAfter, opt => opt.MapFrom(src => src.DataAfter))
+                .ForMember(dest => dest.Module, opt => opt.MapFrom(src => src.Module))
+                .ForMember(dest => dest.ActionType, opt => opt.MapFrom(src => src.ActionType))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.IPAddress, opt => opt.MapFrom(src => src.IPAddress));
 
             CreateMap<LoginAttemptLog, LoginAttemptLogDto>();
 

@@ -5,14 +5,14 @@
 namespace PointOfSaleSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUnitActive : Migration
+    public partial class UpdateReceivedStockModel : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
-                name: "IsActive",
-                table: "Units",
+                name: "Processed",
+                table: "ReceivedStocks",
                 type: "bit",
                 nullable: false,
                 defaultValue: false);
@@ -22,8 +22,8 @@ namespace PointOfSaleSystem.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "IsActive",
-                table: "Units");
+                name: "Processed",
+                table: "ReceivedStocks");
         }
     }
 }

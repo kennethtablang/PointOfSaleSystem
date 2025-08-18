@@ -12,8 +12,8 @@ using PointOfSaleSystem.Data;
 namespace PointOfSaleSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250807031314_AddCategoryActive")]
-    partial class AddCategoryActive
+    [Migration("20250814011434_AddReceivedStock")]
+    partial class AddReceivedStock
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -289,7 +289,8 @@ namespace PointOfSaleSystem.Migrations
 
                     b.Property<string>("ActionType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("DataAfter")
                         .HasColumnType("nvarchar(max)");
@@ -302,11 +303,23 @@ namespace PointOfSaleSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IPAddress")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("LogLevel")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Module")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ReferenceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferenceType")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
@@ -316,7 +329,13 @@ namespace PointOfSaleSystem.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Module");
+
+                    b.HasIndex("Timestamp");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ReferenceType", "ReferenceId");
 
                     b.ToTable("SystemLogs");
                 });
@@ -442,7 +461,13 @@ namespace PointOfSaleSystem.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("ReferenceId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ReferenceNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReferenceType")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Remarks")
@@ -608,6 +633,97 @@ namespace PointOfSaleSystem.Migrations
                     b.ToTable("StockAdjustments");
                 });
 
+            modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.StockReceive", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PurchaseOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReceivedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ReceivedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.HasIndex("ReceivedByUserId");
+
+                    b.ToTable("StockReceives");
+                });
+
+            modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.StockReceiveItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BatchNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("FromUnitId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("InventoryTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("QuantityInFromUnit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("StockReceiveId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("UnitCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromUnitId");
+
+                    b.HasIndex("InventoryTransactionId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("StockReceiveId");
+
+                    b.ToTable("StockReceiveItem");
+                });
+
             modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.Unit", b =>
                 {
                     b.Property<int>("Id")
@@ -620,6 +736,9 @@ namespace PointOfSaleSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("AllowsDecimal")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -1759,11 +1878,13 @@ namespace PointOfSaleSystem.Migrations
                     b.Property<int>("PurchaseOrderId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("ReceivedQuantity")
-                        .HasColumnType("int");
+                    b.Property<decimal?>("ReceivedQuantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -1771,7 +1892,7 @@ namespace PointOfSaleSystem.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.ToTable("PurchaseItems");
+                    b.ToTable("PurchaseItem");
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.PurchaseOrder", b =>
@@ -1799,8 +1920,8 @@ namespace PointOfSaleSystem.Migrations
 
                     b.Property<string>("PurchaseOrderNumber")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
@@ -1819,12 +1940,15 @@ namespace PointOfSaleSystem.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
+                    b.HasIndex("PurchaseOrderNumber")
+                        .IsUnique();
+
                     b.HasIndex("SupplierId");
 
                     b.ToTable("PurchaseOrders");
                 });
 
-            modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.ReceivedStock", b =>
+            modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.PurchaseOrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1832,11 +1956,8 @@ namespace PointOfSaleSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("InventoryTransactionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime?>("ExpectedDeliveryDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
@@ -1844,32 +1965,42 @@ namespace PointOfSaleSystem.Migrations
                     b.Property<int>("PurchaseOrderId")
                         .HasColumnType("int");
 
-                    b.Property<int>("QuantityReceived")
+                    b.Property<decimal>("QuantityOrdered")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("QuantityReceived")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("UnitId")
                         .HasColumnType("int");
-
-                    b.Property<string>("ReceivedByUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("ReceivedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ReferenceNumber")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InventoryTransactionId")
-                        .IsUnique()
-                        .HasFilter("[InventoryTransactionId] IS NOT NULL");
-
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("PurchaseOrderId");
+                    b.HasIndex("UnitId");
 
-                    b.HasIndex("ReceivedByUserId");
+                    b.HasIndex("PurchaseOrderId", "ProductId");
 
-                    b.ToTable("ReceivedStocks");
+                    b.ToTable("PurchaseOrderItems", t =>
+                        {
+                            t.HasComment("Purchase order line items");
+                        });
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.Supplier", b =>
@@ -2036,7 +2167,7 @@ namespace PointOfSaleSystem.Migrations
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Unit", "Unit")
                         .WithMany("Products")
                         .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Category");
@@ -2055,7 +2186,7 @@ namespace PointOfSaleSystem.Migrations
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Unit", "ToUnit")
@@ -2100,6 +2231,56 @@ namespace PointOfSaleSystem.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.StockReceive", b =>
+                {
+                    b.HasOne("PointOfSaleSystem.Models.Suppliers.PurchaseOrder", "PurchaseOrder")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "ReceivedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReceivedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PurchaseOrder");
+
+                    b.Navigation("ReceivedByUser");
+                });
+
+            modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.StockReceiveItem", b =>
+                {
+                    b.HasOne("PointOfSaleSystem.Models.Inventory.Unit", "FromUnit")
+                        .WithMany()
+                        .HasForeignKey("FromUnitId");
+
+                    b.HasOne("PointOfSaleSystem.Models.Inventory.InventoryTransaction", "InventoryTransaction")
+                        .WithMany()
+                        .HasForeignKey("InventoryTransactionId");
+
+                    b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PointOfSaleSystem.Models.Inventory.StockReceive", "StockReceive")
+                        .WithMany("Items")
+                        .HasForeignKey("StockReceiveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FromUnit");
+
+                    b.Navigation("InventoryTransaction");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("StockReceive");
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Printing.BackupLog", b =>
@@ -2450,7 +2631,7 @@ namespace PointOfSaleSystem.Migrations
                         .IsRequired();
 
                     b.HasOne("PointOfSaleSystem.Models.Suppliers.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("PurchaseItems")
+                        .WithMany()
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2477,13 +2658,8 @@ namespace PointOfSaleSystem.Migrations
                     b.Navigation("Supplier");
                 });
 
-            modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.ReceivedStock", b =>
+            modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.PurchaseOrderItem", b =>
                 {
-                    b.HasOne("PointOfSaleSystem.Models.Inventory.InventoryTransaction", "InventoryTransaction")
-                        .WithOne()
-                        .HasForeignKey("PointOfSaleSystem.Models.Suppliers.ReceivedStock", "InventoryTransactionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -2491,23 +2667,22 @@ namespace PointOfSaleSystem.Migrations
                         .IsRequired();
 
                     b.HasOne("PointOfSaleSystem.Models.Suppliers.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("ReceivedStocks")
+                        .WithMany("Items")
                         .HasForeignKey("PurchaseOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "ReceivedByUser")
+                    b.HasOne("PointOfSaleSystem.Models.Inventory.Unit", "Unit")
                         .WithMany()
-                        .HasForeignKey("ReceivedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("InventoryTransaction");
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Product");
 
                     b.Navigation("PurchaseOrder");
 
-                    b.Navigation("ReceivedByUser");
+                    b.Navigation("Unit");
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Auth.ApplicationUser", b =>
@@ -2525,6 +2700,11 @@ namespace PointOfSaleSystem.Migrations
             modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.Product", b =>
                 {
                     b.Navigation("InventoryTransactions");
+                });
+
+            modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.StockReceive", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.Unit", b =>
@@ -2565,9 +2745,7 @@ namespace PointOfSaleSystem.Migrations
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.PurchaseOrder", b =>
                 {
-                    b.Navigation("PurchaseItems");
-
-                    b.Navigation("ReceivedStocks");
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Suppliers.Supplier", b =>

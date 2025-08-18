@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// Models/Suppliers/PurchaseItem.cs (if you keep it)
+using Microsoft.EntityFrameworkCore;
 using PointOfSaleSystem.Models.Inventory;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -16,23 +17,24 @@ namespace PointOfSaleSystem.Models.Suppliers
         public int ProductId { get; set; }
 
         [Required]
-        [Range(0.01, double.MaxValue)]
+        [Range(0.0001, double.MaxValue)]
         [Precision(18, 2)]
         public decimal CostPerUnit { get; set; }
 
+        // Use decimal for quantity (allows fractional for unit conversions)
         [Required]
-        [Range(1, int.MaxValue)]
-        public int Quantity { get; set; }
+        [Precision(18, 2)]
+        [Range(0.0001, double.MaxValue)]
+        public decimal Quantity { get; set; }
 
-        public int? ReceivedQuantity { get; set; } = 0;
+        [Precision(18, 2)]
+        public decimal? ReceivedQuantity { get; set; } = 0m;
 
         public string? Notes { get; set; }
 
-        // Navigation
         public PurchaseOrder? PurchaseOrder { get; set; }
         public Product? Product { get; set; }
 
-        // convenience property(Not mapped to DB)
         [NotMapped]
         public decimal TotalCost => Quantity * CostPerUnit;
     }

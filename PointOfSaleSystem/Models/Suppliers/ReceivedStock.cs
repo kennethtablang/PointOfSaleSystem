@@ -1,5 +1,5 @@
-﻿using PointOfSaleSystem.Models.Auth;
-using PointOfSaleSystem.Models.Inventory;
+﻿using Microsoft.EntityFrameworkCore;
+using PointOfSaleSystem.Models.Auth;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -11,33 +11,30 @@ namespace PointOfSaleSystem.Models.Suppliers
 
         [Required]
         public int PurchaseOrderId { get; set; }
+        public PurchaseOrder? PurchaseOrder { get; set; }
+
+        [Required]
+        public int PurchaseOrderItemId { get; set; }
+        public PurchaseOrderItem? PurchaseOrderItem { get; set; }
 
         [Required]
         public int ProductId { get; set; }
 
-        [Required]
-        [Range(1, int.MaxValue)]
-        public int QuantityReceived { get; set; }
+        [Precision(18, 2)]
+        [Range(0.0001, double.MaxValue)]
+        public decimal QuantityReceived { get; set; }
 
-        public DateTime ReceivedDate { get; set; } = DateTime.Now;
+        public DateTime ReceivedDate { get; set; } = DateTime.UtcNow;
 
-        [MaxLength(200)]
-        public string? ReferenceNumber { get; set; } // e.g., delivery receipt number
+        [MaxLength(100)]
+        public string? ReferenceNumber { get; set; }
 
-        public string? ReceivedByUserId { get; set; }
-
+        [MaxLength(500)]
         public string? Notes { get; set; }
 
-        // Optional link to inventory movement
-        public int? InventoryTransactionId { get; set; }
+        public bool Processed { get; set; } = false;
 
-        [ForeignKey("InventoryTransactionId")]
-        public InventoryTransaction? InventoryTransaction { get; set; }
-
-        // Navigation
-        public PurchaseOrder? PurchaseOrder { get; set; }
-        public Product? Product { get; set; }
-
+        public string? ReceivedByUserId { get; set; }
         [ForeignKey("ReceivedByUserId")]
         public ApplicationUser? ReceivedByUser { get; set; }
     }

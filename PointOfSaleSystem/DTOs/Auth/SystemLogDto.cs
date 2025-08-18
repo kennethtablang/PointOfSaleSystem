@@ -16,5 +16,11 @@
 
         public string? UserId { get; set; }
         public string? PerformedBy { get; set; }
+
+        // New fields to match the model
+        public string? ReferenceType { get; set; }
+        public int? ReferenceId { get; set; }
+
+        public string? LogLevel { get; set; } // e.g., "INFO", "WARN", "ERROR"
     }
 }

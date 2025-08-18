@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace PointOfSaleSystem.Models.Suppliers
 {
+    [Index(nameof(PurchaseOrderNumber), IsUnique = true)]
     public class PurchaseOrder
     {
         public int Id { get; set; }
@@ -17,7 +18,7 @@ namespace PointOfSaleSystem.Models.Suppliers
         [MaxLength(200)]
         public string PurchaseOrderNumber { get; set; } = string.Empty;
 
-        public DateTime OrderDate { get; set; } = DateTime.Now;
+        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
         public bool IsReceived { get; set; } = false;
 
@@ -36,14 +37,15 @@ namespace PointOfSaleSystem.Models.Suppliers
         [ForeignKey("SupplierId")]
         public Supplier? Supplier { get; set; }
 
-        public ICollection<PurchaseItem> PurchaseItems { get; set; } = new List<PurchaseItem>();
+        public ICollection<PurchaseOrderItem> Items { get; set; } = new List<PurchaseOrderItem>();
 
-        public ICollection<ReceivedStock> ReceivedStocks { get; set; } = new List<ReceivedStock>();
-
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public string? CreatedByUserId { get; set; }
         [ForeignKey("CreatedByUserId")]
         public ApplicationUser? CreatedByUser { get; set; }
+
+        public ICollection<ReceivedStock> ReceivedStocks { get; set; }
+
     }
 }

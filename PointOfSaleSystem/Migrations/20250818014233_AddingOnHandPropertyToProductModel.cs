@@ -5,25 +5,27 @@
 namespace PointOfSaleSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class AddCategoryActive : Migration
+    public partial class AddingOnHandPropertyToProductModel : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "IsActive",
-                table: "Categories",
-                type: "bit",
+            migrationBuilder.AddColumn<decimal>(
+                name: "OnHand",
+                table: "Products",
+                type: "decimal(18,2)",
+                precision: 18,
+                scale: 2,
                 nullable: false,
-                defaultValue: false);
+                defaultValue: 0m);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "IsActive",
-                table: "Categories");
+                name: "OnHand",
+                table: "Products");
         }
     }
 }

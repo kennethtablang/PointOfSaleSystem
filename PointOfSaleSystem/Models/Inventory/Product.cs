@@ -43,6 +43,9 @@ namespace PointOfSaleSystem.Models.Inventory
 
         public byte[]? ImageData { get; set; }
 
+        [Precision(18, 2)]
+        public decimal OnHand { get; set; } = 0m;
+
         public ICollection<InventoryTransaction>? InventoryTransactions { get; set; } = new List<InventoryTransaction>();
     }
 }

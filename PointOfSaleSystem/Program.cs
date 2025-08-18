@@ -91,10 +91,15 @@ namespace PointOfSaleSystem
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<IUnitService, UnitService>();
             builder.Services.AddScoped<IProductUnitConversionService, ProductUnitConversionService>();
+            builder.Services.AddScoped<IInventoryTransactionService, InventoryTransactionService>();
+            builder.Services.AddScoped<IBadOrderService, BadOrderService>();
+            builder.Services.AddScoped<IStockAdjustmentService, StockAdjustmentService>();
+            builder.Services.AddScoped<IStockReceiveService, StockReceiveService>();
 
             //Supplier Services
             builder.Services.AddScoped<ISupplierService, SupplierService>();
             builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+            builder.Services.AddScoped<IStockAdjustmentService, StockAdjustmentService>();
 
             // Swagger / OpenAPI
             builder.Services.AddEndpointsApiExplorer();

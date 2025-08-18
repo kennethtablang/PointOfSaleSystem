@@ -104,6 +104,8 @@ namespace PointOfSaleSystem.DTOs.Inventory
 
         public bool IsActive { get; set; }
 
+        public decimal OnHand { get; set; }
+
         // Base64-encoded image data for display (optional)
         public string? ImageBase64 { get; set; }
     }

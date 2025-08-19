@@ -1,6 +1,7 @@
 ﻿using PointOfSaleSystem.Models.Auth;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using PointOfSaleSystem.Enums;
 
 namespace PointOfSaleSystem.Models.Sales
 {
@@ -10,7 +11,6 @@ namespace PointOfSaleSystem.Models.Sales
 
         [Required]
         public int OriginalSaleId { get; set; }
-
         [ForeignKey("OriginalSaleId")]
         public Sale OriginalSale { get; set; }
 
@@ -19,21 +19,23 @@ namespace PointOfSaleSystem.Models.Sales
 
         [Required]
         public string ReturnedByUserId { get; set; }
-
-        [ForeignKey("ReturnedByUserId")]
         public ApplicationUser ReturnedBy { get; set; }
 
         [MaxLength(250)]
         public string Reason { get; set; } = string.Empty;
 
-        // Optional: Total refund amount (computed in backend, stored for history)
         [Column(TypeName = "decimal(18,2)")]
         public decimal? TotalRefundAmount { get; set; }
 
-        // Optional: Terminal where the return was processed
         [MaxLength(100)]
         public string? TerminalIdentifier { get; set; }
 
         public ICollection<ReturnedItem> Items { get; set; } = new List<ReturnedItem>();
+
+        // New: status of the return flow
+        public ReturnStatus Status { get; set; } = ReturnStatus.Pending;
+
+        // New: chosen method for refund (cash, card, store credit, etc.)
+        public RefundMethod RefundMethod { get; set; } = RefundMethod.Cash;
     }
 }

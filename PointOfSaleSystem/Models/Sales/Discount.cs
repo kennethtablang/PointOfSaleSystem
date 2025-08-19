@@ -22,7 +22,6 @@ namespace PointOfSaleSystem.Models.Sales
         [ForeignKey("SaleItemId")]
         public SaleItem? SaleItem { get; set; }
 
-        // Replaced DiscountType string with FK to DiscountSetting
         [Required]
         public int DiscountSettingId { get; set; }
 
@@ -32,18 +31,20 @@ namespace PointOfSaleSystem.Models.Sales
         [Precision(18, 2)]
         public decimal DiscountAmount { get; set; }
 
+        // snapshot of discount percent applied for historical accuracy
+        [Precision(18, 4)]
+        public decimal PercentApplied { get; set; }
+
         [MaxLength(250)]
-        public string? Reason { get; set; } // Justification or remarks
+        public string? Reason { get; set; }
 
         public DateTime AppliedAt { get; set; } = DateTime.Now;
 
         public string? AppliedByUserId { get; set; }
-
         [ForeignKey("AppliedByUserId")]
         public ApplicationUser? AppliedByUser { get; set; }
 
         public string? ApprovedByUserId { get; set; }
-
         [ForeignKey("ApprovedByUserId")]
         public ApplicationUser? ApprovedByUser { get; set; }
     }

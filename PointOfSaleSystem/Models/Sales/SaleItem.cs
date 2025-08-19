@@ -8,18 +8,15 @@ namespace PointOfSaleSystem.Models.Sales
 {
     public class SaleItem
     {
-        [Key]
         public int Id { get; set; }
 
         [Required]
         public int SaleId { get; set; }
-
         [ForeignKey("SaleId")]
         public Sale Sale { get; set; }
 
         [Required]
-        public int ProductId { get; set; } // referencing to the Product Model
-
+        public int ProductId { get; set; }
         [ForeignKey("ProductId")]
         public Product Product { get; set; }
 
@@ -30,13 +27,15 @@ namespace PointOfSaleSystem.Models.Sales
         public decimal ReturnedQuantity { get; set; } = 0;
 
         [Required]
-        public int UnitId { get; set; } // Records the sold unit (e.g., Box, Pack)
-
+        public int UnitId { get; set; }
         [ForeignKey("UnitId")]
         public Unit Unit { get; set; }
 
         [Precision(18, 2)]
         public decimal UnitPrice { get; set; }
+
+        [Precision(18, 2)]
+        public decimal CostPrice { get; set; }
 
         [Range(0, 100)]
         [Precision(18, 4)]

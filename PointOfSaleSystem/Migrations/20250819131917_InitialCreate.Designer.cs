@@ -12,8 +12,8 @@ using PointOfSaleSystem.Data;
 namespace PointOfSaleSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250815032007_UpdateReceivedStockModel")]
-    partial class UpdateReceivedStockModel
+    [Migration("20250819131917_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -387,6 +387,12 @@ namespace PointOfSaleSystem.Migrations
                     b.Property<DateTime>("BadOrderDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("InventoryTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsSystemGenerated")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -407,6 +413,8 @@ namespace PointOfSaleSystem.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InventoryTransactionId");
 
                     b.HasIndex("ProductId");
 
@@ -524,6 +532,10 @@ namespace PointOfSaleSystem.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<decimal>("OnHand")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -610,8 +622,9 @@ namespace PointOfSaleSystem.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Reason")
                         .HasMaxLength(150)
@@ -721,7 +734,7 @@ namespace PointOfSaleSystem.Migrations
 
                     b.HasIndex("StockReceiveId");
 
-                    b.ToTable("StockReceiveItem");
+                    b.ToTable("StockReceiveItems");
                 });
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.Unit", b =>
@@ -1115,6 +1128,10 @@ namespace PointOfSaleSystem.Migrations
                     b.Property<int>("DiscountSettingId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("PercentApplied")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<string>("Reason")
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
@@ -1149,6 +1166,10 @@ namespace PointOfSaleSystem.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ChangeAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -1191,6 +1212,10 @@ namespace PointOfSaleSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("DeviceIdentifier")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<bool>("IsReprint")
                         .HasColumnType("bit");
 
@@ -1208,6 +1233,9 @@ namespace PointOfSaleSystem.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("ReceiptType")
+                        .HasColumnType("int");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(250)
@@ -1245,6 +1273,9 @@ namespace PointOfSaleSystem.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
 
+                    b.Property<int>("RefundMethod")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("ReturnDate")
                         .HasColumnType("datetime2");
 
@@ -1253,6 +1284,9 @@ namespace PointOfSaleSystem.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("SaleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<string>("TerminalIdentifier")
@@ -1322,10 +1356,10 @@ namespace PointOfSaleSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsSeniorCitizen")
+                    b.Property<bool>("IsFullyRefunded")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsVoided")
+                    b.Property<bool>("IsSeniorCitizen")
                         .HasColumnType("bit");
 
                     b.Property<decimal>("NonVatAmount")
@@ -1336,6 +1370,9 @@ namespace PointOfSaleSystem.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -1345,6 +1382,9 @@ namespace PointOfSaleSystem.Migrations
 
                     b.Property<string>("SeniorCitizenId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("SubTotal")
                         .HasPrecision(18, 2)
@@ -1389,6 +1429,40 @@ namespace PointOfSaleSystem.Migrations
                     b.ToTable("Sales");
                 });
 
+            modelBuilder.Entity("PointOfSaleSystem.Models.Sales.SaleAuditTrail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActionAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PerformedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("SaleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerformedByUserId");
+
+                    b.HasIndex("SaleId");
+
+                    b.ToTable("SaleAuditTrails");
+                });
+
             modelBuilder.Entity("PointOfSaleSystem.Models.Sales.SaleItem", b =>
                 {
                     b.Property<int>("Id")
@@ -1398,6 +1472,10 @@ namespace PointOfSaleSystem.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("ComputedTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CostPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -1459,6 +1537,12 @@ namespace PointOfSaleSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ApprovalUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsSystemVoid")
+                        .HasColumnType("bit");
+
                     b.Property<string>("OriginalCashierUserId")
                         .HasColumnType("nvarchar(450)");
 
@@ -1482,6 +1566,8 @@ namespace PointOfSaleSystem.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovalUserId");
 
                     b.HasIndex("OriginalCashierUserId");
 
@@ -2149,7 +2235,7 @@ namespace PointOfSaleSystem.Migrations
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "User")
                         .WithMany("Logs")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("User");
                 });
@@ -2163,7 +2249,7 @@ namespace PointOfSaleSystem.Migrations
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "User")
                         .WithMany("Sessions")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -2171,6 +2257,11 @@ namespace PointOfSaleSystem.Migrations
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Inventory.BadOrder", b =>
                 {
+                    b.HasOne("PointOfSaleSystem.Models.Inventory.InventoryTransaction", "InventoryTransaction")
+                        .WithMany()
+                        .HasForeignKey("InventoryTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -2180,8 +2271,10 @@ namespace PointOfSaleSystem.Migrations
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "ReportedByUser")
                         .WithMany()
                         .HasForeignKey("ReportedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("InventoryTransaction");
 
                     b.Navigation("Product");
 
@@ -2192,7 +2285,8 @@ namespace PointOfSaleSystem.Migrations
                 {
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "PerformedByUser")
                         .WithMany()
-                        .HasForeignKey("PerformedById");
+                        .HasForeignKey("PerformedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
                         .WithMany("InventoryTransactions")
@@ -2256,12 +2350,13 @@ namespace PointOfSaleSystem.Migrations
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "AdjustedByUser")
                         .WithMany()
                         .HasForeignKey("AdjustedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PointOfSaleSystem.Models.Inventory.InventoryTransaction", "InventoryTransaction")
                         .WithMany()
-                        .HasForeignKey("InventoryTransactionId");
+                        .HasForeignKey("InventoryTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
                         .WithMany()
@@ -2293,7 +2388,7 @@ namespace PointOfSaleSystem.Migrations
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "ReceivedByUser")
                         .WithMany()
                         .HasForeignKey("ReceivedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("PurchaseOrder");
@@ -2309,7 +2404,8 @@ namespace PointOfSaleSystem.Migrations
 
                     b.HasOne("PointOfSaleSystem.Models.Inventory.InventoryTransaction", "InventoryTransaction")
                         .WithMany()
-                        .HasForeignKey("InventoryTransactionId");
+                        .HasForeignKey("InventoryTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
                         .WithMany()
@@ -2418,11 +2514,13 @@ namespace PointOfSaleSystem.Migrations
                 {
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "AppliedByUser")
                         .WithMany()
-                        .HasForeignKey("AppliedByUserId");
+                        .HasForeignKey("AppliedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "ApprovedByUser")
                         .WithMany()
-                        .HasForeignKey("ApprovedByUserId");
+                        .HasForeignKey("ApprovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PointOfSaleSystem.Models.Settings.DiscountSetting", "DiscountSetting")
                         .WithMany()
@@ -2461,7 +2559,8 @@ namespace PointOfSaleSystem.Migrations
 
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "User")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Sale");
 
@@ -2564,6 +2663,25 @@ namespace PointOfSaleSystem.Migrations
                     b.Navigation("ZReading");
                 });
 
+            modelBuilder.Entity("PointOfSaleSystem.Models.Sales.SaleAuditTrail", b =>
+                {
+                    b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "PerformedBy")
+                        .WithMany()
+                        .HasForeignKey("PerformedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PointOfSaleSystem.Models.Sales.Sale", "Sale")
+                        .WithMany()
+                        .HasForeignKey("SaleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PerformedBy");
+
+                    b.Navigation("Sale");
+                });
+
             modelBuilder.Entity("PointOfSaleSystem.Models.Sales.SaleItem", b =>
                 {
                     b.HasOne("PointOfSaleSystem.Models.Inventory.Product", "Product")
@@ -2593,9 +2711,15 @@ namespace PointOfSaleSystem.Migrations
 
             modelBuilder.Entity("PointOfSaleSystem.Models.Sales.VoidTransaction", b =>
                 {
+                    b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "ApprovalUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovalUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "OriginalCashier")
                         .WithMany()
-                        .HasForeignKey("OriginalCashierUserId");
+                        .HasForeignKey("OriginalCashierUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PointOfSaleSystem.Models.Sales.Sale", "Sale")
                         .WithMany()
@@ -2606,8 +2730,10 @@ namespace PointOfSaleSystem.Migrations
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "VoidedBy")
                         .WithMany()
                         .HasForeignKey("VoidedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ApprovalUser");
 
                     b.Navigation("OriginalCashier");
 
@@ -2620,7 +2746,8 @@ namespace PointOfSaleSystem.Migrations
                 {
                     b.HasOne("PointOfSaleSystem.Models.Auth.ApplicationUser", "ExportedByUser")
                         .WithMany()
-                        .HasForeignKey("ExportedByUserId");
+                        .HasForeignKey("ExportedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ExportedByUser");
                 });

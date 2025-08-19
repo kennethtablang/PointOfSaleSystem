@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PointOfSaleSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class DatabaseInitialUpdate : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -429,7 +429,8 @@ namespace PointOfSaleSystem.Migrations
                         name: "FK_ReportExportLogs_AspNetUsers_ExportedByUserId",
                         column: x => x.ExportedByUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -458,7 +459,7 @@ namespace PointOfSaleSystem.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -537,7 +538,7 @@ namespace PointOfSaleSystem.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserSessions_Counters_CounterId",
                         column: x => x.CounterId,
@@ -677,7 +678,8 @@ namespace PointOfSaleSystem.Migrations
                     IsPerishable = table.Column<bool>(type: "bit", nullable: false),
                     ReorderLevel = table.Column<int>(type: "int", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    ImageData = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    ImageData = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    OnHand = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -712,12 +714,14 @@ namespace PointOfSaleSystem.Migrations
                     VatAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     NonVatAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    IsVoided = table.Column<bool>(type: "bit", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     VoidedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     VoidedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     Remarks = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     IsSeniorCitizen = table.Column<bool>(type: "bit", nullable: false),
                     SeniorCitizenId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsFullyRefunded = table.Column<bool>(type: "bit", nullable: false),
+                    RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     XReadingId = table.Column<int>(type: "int", nullable: true),
                     ZReadingId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -772,41 +776,11 @@ namespace PointOfSaleSystem.Migrations
                         column: x => x.ReceivedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_StockReceives_PurchaseOrders_PurchaseOrderId",
                         column: x => x.PurchaseOrderId,
                         principalTable: "PurchaseOrders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "BadOrders",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    Reason = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Remarks = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
-                    BadOrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReportedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BadOrders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_BadOrders_AspNetUsers_ReportedByUserId",
-                        column: x => x.ReportedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_BadOrders_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -835,7 +809,8 @@ namespace PointOfSaleSystem.Migrations
                         name: "FK_InventoryTransactions_AspNetUsers_PerformedById",
                         column: x => x.PerformedById,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_InventoryTransactions_Products_ProductId",
                         column: x => x.ProductId,
@@ -1011,7 +986,8 @@ namespace PointOfSaleSystem.Migrations
                     PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Terminal = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ChangeAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1020,7 +996,8 @@ namespace PointOfSaleSystem.Migrations
                         name: "FK_Payments_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Payments_Sales_SaleId",
                         column: x => x.SaleId,
@@ -1042,7 +1019,9 @@ namespace PointOfSaleSystem.Migrations
                     PrintedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     PrintedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     TerminalIdentifier = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true)
+                    Remarks = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    ReceiptType = table.Column<int>(type: "int", nullable: false),
+                    DeviceIdentifier = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1102,6 +1081,8 @@ namespace PointOfSaleSystem.Migrations
                     Reason = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     TotalRefundAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     TerminalIdentifier = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    RefundMethod = table.Column<int>(type: "int", nullable: false),
                     SaleId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -1127,6 +1108,35 @@ namespace PointOfSaleSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SaleAuditTrails",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SaleId = table.Column<int>(type: "int", nullable: false),
+                    ActionType = table.Column<int>(type: "int", nullable: false),
+                    ActionAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PerformedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Details = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SaleAuditTrails", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SaleAuditTrails_AspNetUsers_PerformedByUserId",
+                        column: x => x.PerformedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SaleAuditTrails_Sales_SaleId",
+                        column: x => x.SaleId,
+                        principalTable: "Sales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SaleItems",
                 columns: table => new
                 {
@@ -1138,6 +1148,7 @@ namespace PointOfSaleSystem.Migrations
                     ReturnedQuantity = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     UnitId = table.Column<int>(type: "int", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CostPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     DiscountPercent = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     ComputedTotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
@@ -1179,22 +1190,31 @@ namespace PointOfSaleSystem.Migrations
                     VoidedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Reason = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     TerminalIdentifier = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    OriginalCashierUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    OriginalCashierUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ApprovalUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    IsSystemVoid = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_VoidTransactions", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_VoidTransactions_AspNetUsers_ApprovalUserId",
+                        column: x => x.ApprovalUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_VoidTransactions_AspNetUsers_OriginalCashierUserId",
                         column: x => x.OriginalCashierUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_VoidTransactions_AspNetUsers_VoidedByUserId",
                         column: x => x.VoidedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_VoidTransactions_Sales_SaleId",
                         column: x => x.SaleId,
@@ -1204,13 +1224,51 @@ namespace PointOfSaleSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "StockAdjustments",
+                name: "BadOrders",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Remarks = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    BadOrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReportedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    InventoryTransactionId = table.Column<int>(type: "int", nullable: true),
+                    IsSystemGenerated = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BadOrders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BadOrders_AspNetUsers_ReportedByUserId",
+                        column: x => x.ReportedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_BadOrders_InventoryTransactions_InventoryTransactionId",
+                        column: x => x.InventoryTransactionId,
+                        principalTable: "InventoryTransactions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_BadOrders_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockAdjustments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     UnitId = table.Column<int>(type: "int", nullable: true),
                     Reason = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
                     AdjustmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -1226,12 +1284,13 @@ namespace PointOfSaleSystem.Migrations
                         column: x => x.AdjustedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_StockAdjustments_InventoryTransactions_InventoryTransactionId",
                         column: x => x.InventoryTransactionId,
                         principalTable: "InventoryTransactions",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_StockAdjustments_Products_ProductId",
                         column: x => x.ProductId,
@@ -1246,7 +1305,7 @@ namespace PointOfSaleSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "StockReceiveItem",
+                name: "StockReceiveItems",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -1264,29 +1323,68 @@ namespace PointOfSaleSystem.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StockReceiveItem", x => x.Id);
+                    table.PrimaryKey("PK_StockReceiveItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_StockReceiveItem_InventoryTransactions_InventoryTransactionId",
+                        name: "FK_StockReceiveItems_InventoryTransactions_InventoryTransactionId",
                         column: x => x.InventoryTransactionId,
                         principalTable: "InventoryTransactions",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_StockReceiveItem_Products_ProductId",
+                        name: "FK_StockReceiveItems_Products_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_StockReceiveItem_StockReceives_StockReceiveId",
+                        name: "FK_StockReceiveItems_StockReceives_StockReceiveId",
                         column: x => x.StockReceiveId,
                         principalTable: "StockReceives",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_StockReceiveItem_Units_FromUnitId",
+                        name: "FK_StockReceiveItems_Units_FromUnitId",
                         column: x => x.FromUnitId,
                         principalTable: "Units",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReceivedStocks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
+                    PurchaseOrderItemId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    QuantityReceived = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    ReceivedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReferenceNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Processed = table.Column<bool>(type: "bit", nullable: false),
+                    ReceivedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReceivedStocks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReceivedStocks_AspNetUsers_ReceivedByUserId",
+                        column: x => x.ReceivedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ReceivedStocks_PurchaseOrderItems_PurchaseOrderItemId",
+                        column: x => x.PurchaseOrderItemId,
+                        principalTable: "PurchaseOrderItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ReceivedStocks_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1327,6 +1425,7 @@ namespace PointOfSaleSystem.Migrations
                     SaleItemId = table.Column<int>(type: "int", nullable: true),
                     DiscountSettingId = table.Column<int>(type: "int", nullable: false),
                     DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    PercentApplied = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     Reason = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
                     AppliedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AppliedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -1339,12 +1438,14 @@ namespace PointOfSaleSystem.Migrations
                         name: "FK_Discounts_AspNetUsers_AppliedByUserId",
                         column: x => x.AppliedByUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Discounts_AspNetUsers_ApprovedByUserId",
                         column: x => x.ApprovedByUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Discounts_DiscountSettings_DiscountSettingId",
                         column: x => x.DiscountSettingId,
@@ -1407,6 +1508,11 @@ namespace PointOfSaleSystem.Migrations
                 name: "IX_BackupLogs_ActionByUserId",
                 table: "BackupLogs",
                 column: "ActionByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BadOrders_InventoryTransactionId",
+                table: "BadOrders",
+                column: "InventoryTransactionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BadOrders_ProductId",
@@ -1567,6 +1673,21 @@ namespace PointOfSaleSystem.Migrations
                 column: "SaleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ReceivedStocks_PurchaseOrderId",
+                table: "ReceivedStocks",
+                column: "PurchaseOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReceivedStocks_PurchaseOrderItemId",
+                table: "ReceivedStocks",
+                column: "PurchaseOrderItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReceivedStocks_ReceivedByUserId",
+                table: "ReceivedStocks",
+                column: "ReceivedByUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ReportExportLogs_ExportedByUserId",
                 table: "ReportExportLogs",
                 column: "ExportedByUserId");
@@ -1604,6 +1725,16 @@ namespace PointOfSaleSystem.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ReturnTransactions_SaleId",
                 table: "ReturnTransactions",
+                column: "SaleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SaleAuditTrails_PerformedByUserId",
+                table: "SaleAuditTrails",
+                column: "PerformedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SaleAuditTrails_SaleId",
+                table: "SaleAuditTrails",
                 column: "SaleId");
 
             migrationBuilder.CreateIndex(
@@ -1667,23 +1798,23 @@ namespace PointOfSaleSystem.Migrations
                 column: "UnitId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StockReceiveItem_FromUnitId",
-                table: "StockReceiveItem",
+                name: "IX_StockReceiveItems_FromUnitId",
+                table: "StockReceiveItems",
                 column: "FromUnitId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StockReceiveItem_InventoryTransactionId",
-                table: "StockReceiveItem",
+                name: "IX_StockReceiveItems_InventoryTransactionId",
+                table: "StockReceiveItems",
                 column: "InventoryTransactionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StockReceiveItem_ProductId",
-                table: "StockReceiveItem",
+                name: "IX_StockReceiveItems_ProductId",
+                table: "StockReceiveItems",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StockReceiveItem_StockReceiveId",
-                table: "StockReceiveItem",
+                name: "IX_StockReceiveItems_StockReceiveId",
+                table: "StockReceiveItems",
                 column: "StockReceiveId");
 
             migrationBuilder.CreateIndex(
@@ -1730,6 +1861,11 @@ namespace PointOfSaleSystem.Migrations
                 name: "IX_UserSessions_UserId",
                 table: "UserSessions",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VoidTransactions_ApprovalUserId",
+                table: "VoidTransactions",
+                column: "ApprovalUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VoidTransactions_OriginalCashierUserId",
@@ -1835,13 +1971,13 @@ namespace PointOfSaleSystem.Migrations
                 name: "PurchaseItem");
 
             migrationBuilder.DropTable(
-                name: "PurchaseOrderItems");
-
-            migrationBuilder.DropTable(
                 name: "ReceiptLogs");
 
             migrationBuilder.DropTable(
                 name: "ReceiptSettings");
+
+            migrationBuilder.DropTable(
+                name: "ReceivedStocks");
 
             migrationBuilder.DropTable(
                 name: "ReportExportLogs");
@@ -1853,13 +1989,16 @@ namespace PointOfSaleSystem.Migrations
                 name: "ReturnedItems");
 
             migrationBuilder.DropTable(
+                name: "SaleAuditTrails");
+
+            migrationBuilder.DropTable(
                 name: "SerialNumberTracker");
 
             migrationBuilder.DropTable(
                 name: "StockAdjustments");
 
             migrationBuilder.DropTable(
-                name: "StockReceiveItem");
+                name: "StockReceiveItems");
 
             migrationBuilder.DropTable(
                 name: "SystemLogs");
@@ -1884,6 +2023,9 @@ namespace PointOfSaleSystem.Migrations
 
             migrationBuilder.DropTable(
                 name: "SaleItems");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseOrderItems");
 
             migrationBuilder.DropTable(
                 name: "ReturnTransactions");

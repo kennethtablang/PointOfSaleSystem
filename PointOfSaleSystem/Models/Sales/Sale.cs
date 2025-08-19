@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PointOfSaleSystem.Enums;
 using PointOfSaleSystem.Models.Auth;
 using PointOfSaleSystem.Models.Settings;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Diagnostics.Metrics;
 
 namespace PointOfSaleSystem.Models.Sales
 {
@@ -17,7 +17,7 @@ namespace PointOfSaleSystem.Models.Sales
         public string InvoiceNumber { get; set; } = string.Empty;
 
         [MaxLength(100)]
-        public string? ORNumber { get; set; } // For official receipt tracking
+        public string? ORNumber { get; set; }
 
         [Required]
         public string CashierId { get; set; }
@@ -26,7 +26,6 @@ namespace PointOfSaleSystem.Models.Sales
         public ApplicationUser Cashier { get; set; }
 
         public int? CounterId { get; set; }
-
         [ForeignKey("CounterId")]
         public Counter? Counter { get; set; }
 
@@ -37,20 +36,21 @@ namespace PointOfSaleSystem.Models.Sales
         public decimal TotalDiscount { get; set; } = 0;
 
         [Precision(18, 2)]
-        public decimal VatAmount { get; set; } //Only VATable items
+        public decimal VatAmount { get; set; }
 
         [Precision(18, 2)]
-        public decimal NonVatAmount { get; set; } //NetAmount
+        public decimal NonVatAmount { get; set; }
 
         [Precision(18, 2)]
         public decimal TotalAmount { get; set; }
 
-        public bool IsVoided { get; set; } = false;
+        // Replaces IsVoided boolean; expresses overall state of the sale
+        [Required]
+        public SaleStatus Status { get; set; } = SaleStatus.Completed;
 
         public DateTime? VoidedAt { get; set; }
 
         public string? VoidedByUserId { get; set; }
-
         [ForeignKey("VoidedByUserId")]
         public ApplicationUser? VoidedByUser { get; set; }
 
@@ -58,8 +58,11 @@ namespace PointOfSaleSystem.Models.Sales
         public string? Remarks { get; set; }
 
         public bool IsSeniorCitizen { get; set; } = false;
-
         public string? SeniorCitizenId { get; set; }
+
+        // Full-refund meta
+        public bool IsFullyRefunded { get; set; } = false;
+        public DateTime? RefundedAt { get; set; }
 
         public ICollection<SaleItem>? SaleItems { get; set; }
         public ICollection<Payment>? Payments { get; set; }

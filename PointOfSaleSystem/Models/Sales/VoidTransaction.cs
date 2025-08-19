@@ -10,13 +10,11 @@ namespace PointOfSaleSystem.Models.Sales
 
         [Required]
         public int SaleId { get; set; }
-
         [ForeignKey("SaleId")]
         public Sale Sale { get; set; }
 
         [Required]
         public string VoidedByUserId { get; set; }
-
         [ForeignKey("VoidedByUserId")]
         public ApplicationUser VoidedBy { get; set; }
 
@@ -26,14 +24,18 @@ namespace PointOfSaleSystem.Models.Sales
         [MaxLength(250)]
         public string Reason { get; set; } = string.Empty;
 
-        // Optional: IP or machine name of the terminal
         [MaxLength(100)]
         public string? TerminalIdentifier { get; set; }
 
-        // Optional: Track original cashier or user who made the sale
         public string? OriginalCashierUserId { get; set; }
-
         [ForeignKey("OriginalCashierUserId")]
         public ApplicationUser? OriginalCashier { get; set; }
+
+        // New: approval and system flags
+        public string? ApprovalUserId { get; set; }
+        [ForeignKey("ApprovalUserId")]
+        public ApplicationUser? ApprovalUser { get; set; }
+
+        public bool IsSystemVoid { get; set; } = false;
     }
 }

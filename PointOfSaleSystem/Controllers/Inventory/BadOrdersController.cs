@@ -39,9 +39,11 @@ namespace PointOfSaleSystem.Controllers.Inventory
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BadOrderCreateDto dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
+            // fill user id before validation so ModelState won't fail
             var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            dto.ReportedByUserId = userId;
+
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             try
             {

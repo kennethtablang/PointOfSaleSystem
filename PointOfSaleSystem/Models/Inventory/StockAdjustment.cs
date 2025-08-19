@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using PointOfSaleSystem.Models.Auth;
+using Microsoft.EntityFrameworkCore;
 
 namespace PointOfSaleSystem.Models.Inventory
 {
@@ -15,8 +16,8 @@ namespace PointOfSaleSystem.Models.Inventory
         public Product? Product { get; set; }
 
         [Required]
-        [Range(-999999, 999999, ErrorMessage = "Quantity must be a non-zero value.")]
-        public int Quantity { get; set; } // + or - depending on adjustment
+        [Precision(18,2)]
+        public decimal Quantity { get; set; } // + or - depending on adjustment
 
         public int? UnitId { get; set; }
         [ForeignKey("UnitId")]

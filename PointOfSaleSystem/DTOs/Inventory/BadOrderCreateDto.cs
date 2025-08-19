@@ -21,8 +21,7 @@ namespace PointOfSaleSystem.DTOs.Inventory
         [Required]
         public DateTime BadOrderDate { get; set; } = DateTime.Now;
 
-        [Required]
-        public string ReportedByUserId { get; set; } = string.Empty;
+        public string? ReportedByUserId { get; set; } = string.Empty;
     }
 
     public class BadOrderUpdateDto

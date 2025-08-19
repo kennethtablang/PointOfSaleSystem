@@ -8,8 +8,8 @@ namespace PointOfSaleSystem.DTOs.Inventory
         public int ProductId { get; set; }
 
         [Required]
-        [Range(-999999, 999999, ErrorMessage = "Quantity must be a non-zero value.")]
-        public int Quantity { get; set; }
+        [Range(typeof(decimal), "-999999.00", "999999.00", ErrorMessage = "Quantity must be non-zero and within bounds.")]
+        public decimal Quantity { get; set; }
 
         public int? UnitId { get; set; }
 
@@ -27,8 +27,8 @@ namespace PointOfSaleSystem.DTOs.Inventory
         [Required]
         public int Id { get; set; }
 
-        [Range(-999999, 999999, ErrorMessage = "Quantity must be a non-zero value.")]
-        public int Quantity { get; set; }
+        [Range(typeof(decimal), "-999999.00", "999999.00", ErrorMessage = "Quantity must be non-zero and within bounds.")]
+        public decimal Quantity { get; set; }
 
         public int? UnitId { get; set; }
 
@@ -45,7 +45,7 @@ namespace PointOfSaleSystem.DTOs.Inventory
         public int ProductId { get; set; }
         public string? ProductName { get; set; }
 
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
 
         public int? UnitId { get; set; }
         public string? UnitName { get; set; }

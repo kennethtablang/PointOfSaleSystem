@@ -7,7 +7,7 @@ namespace PointOfSaleSystem.Controllers.Inventory
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin, Manager")]
+    [Authorize(Roles = "Admin,Manager")]
     public class InventoryTransactionController : ControllerBase
     {
         private readonly IInventoryTransactionService _service;

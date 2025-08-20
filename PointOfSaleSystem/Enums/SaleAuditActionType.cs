@@ -13,6 +13,7 @@
         PartialRefund = 8,
         PaymentAdded = 9,
         PaymentRemoved = 10,
+        VoidRejected = 11,
         Other = 99
     }
 }

@@ -7,11 +7,13 @@ using Microsoft.OpenApi.Models;
 using PointOfSaleSystem.Data;
 using PointOfSaleSystem.Interfaces.Auth;
 using PointOfSaleSystem.Interfaces.Inventory;
+using PointOfSaleSystem.Interfaces.Sales;
 using PointOfSaleSystem.Interfaces.Settings;
 using PointOfSaleSystem.Interfaces.Supplier;
 using PointOfSaleSystem.Models.Auth;
 using PointOfSaleSystem.Services.Auth;
 using PointOfSaleSystem.Services.Inventory;
+using PointOfSaleSystem.Services.Sales;
 using PointOfSaleSystem.Services.Settings;
 using PointOfSaleSystem.Services.Supplier;
 using System.Text;
@@ -78,6 +80,18 @@ namespace PointOfSaleSystem
             builder.Services.AddScoped<IAuthLogService, AuthLogService>();
             builder.Services.AddScoped<ISystemLogService, SystemLogService>();
             builder.Services.AddScoped<IUserSessionService, UserSessionService>();
+
+            //Sales
+            builder.Services.AddScoped<IDiscountService, DiscountService>();
+            builder.Services.AddScoped<IPaymentService, PaymentService>();
+            builder.Services.AddScoped<IReceiptLogService, ReceiptLogService>();
+            builder.Services.AddScoped<IReturnTransactionService, ReturnTransactionService>();
+            builder.Services.AddScoped<IReturnedItemService, ReturnedItemService>();
+            builder.Services.AddScoped<IReceiptLogService, ReceiptLogService>();
+            builder.Services.AddScoped<ISaleService, SaleService>();
+            builder.Services.AddScoped<ISaleItemService, SaleItemService>();
+            builder.Services.AddScoped<ISaleAuditTrailService, SaleAuditTrailService>();
+            builder.Services.AddScoped<IVoidTransactionService, VoidTransactionService>();
 
             //Settings
             builder.Services.AddScoped<IBusinessProfileService, BusinessProfileService>();

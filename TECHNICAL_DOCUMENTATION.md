@@ -14,7 +14,7 @@ This document explains the Entity Relationship Diagram (ERD) for the Point of Sa
 
 ## Links (paste your live links here)
 
-- **ER Diagram (Mermaid Live):** `<https://www.mermaidchart.com/app/projects/c70298c0-9143-4e2a-be33-ddf5f37be52f/diagrams/e670b369-e66a-4e90-890c-c11872abed9a/version/v0.1/edit>`
+- **ER Diagram (Mermaid Live):** https://www.mermaidchart.com/app/projects/c70298c0-9143-4e2a-be33-ddf5f37be52f/diagrams/e670b369-e66a-4e90-890c-c11872abed9a/version/v0.1/edit
 - **UML — Class Diagram:** `<UML_CLASS_LINK>`
 - **UML — Sequence Diagram: Create & Print Sale:** `<UML_SEQ_SALE_PRINT_LINK>`
 - **UML — Sequence Diagram: Receive Purchase Order:** `<UML_SEQ_RECEIVE_PO_LINK>`

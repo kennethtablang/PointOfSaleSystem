@@ -12,7 +12,7 @@ This document explains the Entity Relationship Diagram (ERD) for the Point of Sa
 
 ---
 
-## Links (paste your live links here)
+## Links
 
 - **ER Diagram (Mermaid Live):** https://www.mermaidchart.com/app/projects/c70298c0-9143-4e2a-be33-ddf5f37be52f/diagrams/e670b369-e66a-4e90-890c-c11872abed9a/version/v0.1/edit
 - **UML — Class Diagram:** https://www.mermaidchart.com/app/projects/c70298c0-9143-4e2a-be33-ddf5f37be52f/diagrams/3f86e5ae-ed97-406a-997a-b1d22a63d5c3/version/v0.1/edit
